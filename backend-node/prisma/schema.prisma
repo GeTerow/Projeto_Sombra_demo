@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TaskStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// NOVA TABELA PARA AS VENDEDORAS
+model Saleswoman {
+  id    String @id @default(uuid())
+  name  String @unique // O nome de cada vendedora deve ser único
+  tasks Task[] // Relação: Uma vendedora pode ter muitas tarefas
+
+  // NOVOS CAMPOS PARA O RESUMO EM PDF
+  summaryPdfPath            String?
+  summaryLastGeneratedAt    DateTime?
+  summaryGenerationsToday   Int       @default(0)
+  summaryLastGenerationDate DateTime? // Usado para resetar o contador diário
+
+  @@map("saleswomen")
+}
+
+model Task {
+  id           String     @id @default(uuid())
+  clientName   String
+  status       TaskStatus @default(PENDING)
+  audioFilePath String
+  transcription String?    @db.Text
+  analysis     String?    @db.Text
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  // RELAÇÃO COM A VENDEDORA
+  saleswomanId String
+  saleswoman   Saleswoman @relation(fields: [saleswomanId], references: [id], onDelete: Cascade)
+
+  @@map("tasks")
+}
