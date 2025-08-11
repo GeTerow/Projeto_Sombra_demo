@@ -1,0 +1,1 @@
+openai, celery, fastapi, dotenv, gevent, requests, uvicorn, numpy==1.26.4, pyannote.audio==3.1.1, whisperx, orch==2.3.1 torchvision==0.18.1, torchaudio==2.3.1 --index-url https://download.pytorch.org/whl/cu121

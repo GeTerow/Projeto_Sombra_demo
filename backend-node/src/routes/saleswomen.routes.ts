@@ -97,9 +97,14 @@ saleswomenRouter.post('/:id/generate-summary-pdf', async (req, res) => {
             }
         }
         
+        // --- CORREÇÃO APLICADA AQUI ---
         // 3. Busca as tarefas para a análise
         const tasks = await prisma.task.findMany({
-            where: { saleswomanId: id, status: 'COMPLETED', analysis: { not: null } },
+            where: { 
+                saleswomanId: id, 
+                status: 'COMPLETED', 
+                analysis: { not: Prisma.JsonNull } // Use Prisma.JsonNull em vez de null
+            },
             orderBy: { createdAt: 'desc' },
             take: 6
         });
@@ -126,8 +131,7 @@ saleswomenRouter.post('/:id/generate-summary-pdf', async (req, res) => {
         doc.fontSize(20).font('Helvetica-Bold').text(`Resumo de Desempenho: ${saleswoman.name}`, { align: 'center' });
         doc.moveDown(2);
         
-        // **AQUI USAMOS A NOVA FUNÇÃO**
-        doc.fontSize(12).lineGap(4); // Define o tamanho da fonte e espaçamento para o parágrafo
+        doc.fontSize(12).lineGap(4);
         renderTextWithBold(doc, summary);
         doc.end();
 

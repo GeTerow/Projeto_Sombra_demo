@@ -7,16 +7,21 @@ import gc
 import tempfile
 import openai
 import traceback
+import time # NOVO: Import para polling
+import json # NOVO: Import para carregar a resposta JSON
+
 from celery_app import celery_app
 from dotenv import load_dotenv
 load_dotenv()
+
 # --- Configuração Inicial ---
 print("Iniciando a configuracao do Worker de IA...")
 
-# MELHORIA: Carregar configurações de variáveis de ambiente para segurança e flexibilidade.
 NODE_BACKEND_URL = os.getenv("NODE_BACKEND_URL", "http://localhost:3001")
 HF_TOKEN = os.getenv("HF_TOKEN")
 openai.api_key = os.getenv("OPENAI_API_KEY")
+# NOVO: Adicione o ID do seu Assistant no arquivo .env
+OPENAI_ASSISTANT_ID = os.getenv("OPENAI_ASSISTANT_ID")
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 8
@@ -24,19 +29,22 @@ COMPUTE_TYPE = "float16" if torch.cuda.is_available() else "int8"
 
 # --- Validação de Configuração Essencial ---
 if not openai.api_key:
-    print("ERRO CRÍTICO: A variável de ambiente OPENAI_API_KEY não foi definida. O worker não poderá processar a análise.")
+    print("ERRO CRÍTICO: A variável de ambiente OPENAI_API_KEY não foi definida.")
 if not HF_TOKEN:
-    print("ERRO CRÍTICO: A variável de ambiente HF_TOKEN não foi definida. O worker não poderá realizar a diarização.")
+    print("ERRO CRÍTICO: A variável de ambiente HF_TOKEN não foi definida.")
+# NOVO: Validação do ID do Assistant
+if not OPENAI_ASSISTANT_ID:
+    print("ERRO CRÍTICO: A variável de ambiente OPENAI_ASSISTANT_ID não foi definida.")
 if not NODE_BACKEND_URL:
-     print("AVISO: A variável de ambiente NODE_BACKEND_URL não foi definida. O worker não poderá enviar webhooks.")
+     print("AVISO: A variável de ambiente NODE_BACKEND_URL não foi definida.")
 
 # --- Carregamento dos Modelos ---
-print(f"Dispositivo: {DEVICE}. Carregando modelo WhisperX (large_v3)...")
+print(f"Dispositivo: {DEVICE}. Carregando modelo WhisperX (large-v3)...")
 model = whisperx.load_model("large-v3", DEVICE, compute_type=COMPUTE_TYPE)
 
 print("Carregando modelo de Diarizacao...")
 if not HF_TOKEN:
-    raise ValueError("Token do Hugging Face (HF_TOKEN) não encontrado. A diarização não pode ser inicializada.")
+    raise ValueError("Token do Hugging Face (HF_TOKEN) não encontrado.")
 diarize_model = whisperx.DiarizationPipeline(use_auth_token=HF_TOKEN, device=DEVICE)
 
 ALIGN_MODELS_CACHE = {}
@@ -51,16 +59,16 @@ def process_audio_task(task_id: str, audio_path: str):
     webhook_url = f"{NODE_BACKEND_URL}/api/v1/tasks/{task_id}/complete"
     
     if not os.path.exists(audio_path):
-        error_message = f"Arquivo de áudio não encontrado pelo WORKER em: {audio_path}. Verifique os volumes e permissões."
+        error_message = f"Arquivo de áudio não encontrado pelo WORKER em: {audio_path}."
         print(f"  -> FALHA! {error_message}")
         try:
             requests.patch(webhook_url, json={"status": "FAILED", "analysis": error_message}, timeout=10)
         except requests.RequestException as req_e:
-            print(f"  -> FALHA ADICIONAL: Não foi possível notificar o backend sobre o erro de arquivo não encontrado. Erro: {req_e}")
+            print(f"  -> FALHA ADICIONAL: Não foi possível notificar o backend. Erro: {req_e}")
         return
 
     try:
-        # Etapas 1-5 ...
+        # Etapas 1-5 ... (sem mudanças)
         print(f"  -> Carregando áudio de: {audio_path}")
         audio = whisperx.load_audio(audio_path)
         
@@ -70,11 +78,11 @@ def process_audio_task(task_id: str, audio_path: str):
         
         print(f"  -> Etapa 2: Alinhando transcrição (idioma: {language_code})...")
         if language_code not in ALIGN_MODELS_CACHE:
-            print(f"    -> Modelo de alinhamento para '{language_code}' não está no cache. Carregando...")
+            print(f"    -> Carregando modelo de alinhamento para '{language_code}'...")
             model_a, metadata = whisperx.load_align_model(language_code=language_code, device=DEVICE)
             ALIGN_MODELS_CACHE[language_code] = (model_a, metadata)
         else:
-            print(f"    -> Reutilizando modelo de alinhamento para '{language_code}' do cache.")
+            print(f"    -> Reutilizando modelo de alinhamento para '{language_code}'.")
         model_a, metadata = ALIGN_MODELS_CACHE[language_code]
         result_aligned = whisperx.align(result_transcribe["segments"], model_a, metadata, audio, DEVICE, return_char_alignments=False)
         
@@ -94,48 +102,61 @@ def process_audio_task(task_id: str, audio_path: str):
             with open(output_vtt_path, 'r', encoding='utf-8') as f:
                 vtt_content = f.read()
         
-        print("  -> Etapa 6: Enviando transcrição para análise da IA (GPT)...")
-        if not openai.api_key:
-             raise ValueError("A chave da API da OpenAI não foi configurada no worker.")
+        # --- ETAPA 6: LÓGICA DO ASSISTANT (ATUALIZADA) ---
+        print("  -> Etapa 6: Interagindo com o OpenAI Assistant...")
+        if not openai.api_key or not OPENAI_ASSISTANT_ID:
+             raise ValueError("Chave da API OpenAI ou ID do Assistant não configurados.")
 
-        prompt = f"""
-    Você é um coach de vendas especialista em análise de ligações.
-    A seguir está uma transcrição em formato WebVTT.
+        client = openai.OpenAI()
 
-    Sua tarefa é:
-    1.  Primeiro, deduza qual locutor é o vendedor e qual é o cliente com base no diálogo. Apresente esta dedução sob o título "**1. Identificação dos locutores**".
-    2.  Depois, identifique, se houver, o máximo de "momentos cruciais" onde o vendedor poderia ter melhorado. Apresente esta seção sob o título "**2. Momentos cruciais para melhoria**".
-    3.  Para cada momento crucial, formate sua análise da seguinte maneira:
-        - **Momento X:**
-        - **Vendedor:** [Citação exata da fala do vendedor]
-        - **Problema:** Análise do que poderia ser melhorado.
-        - **Melhoria:** Sugestão prática e direta.
-        - **Sugestão de Fala:** Exemplo de como o vendedor poderia ter dito.
-    
-    **IMPORTANTE:** Para garantir a legibilidade, adicione uma linha divisória "---" e uma quebra de linha extra entre cada "Momento" analisado.
+        # 1. Cria uma Thread
+        thread = client.beta.threads.create()
+        print(f"    -> Thread criada com ID: {thread.id}")
 
-    Seja direto, prático e foque seus conselhos no desempenho do vendedor.
-
-    Conversa Transcrita (Formato VTT):
-    "{vtt_content}"
-    """
-    
-        response = openai.chat.completions.create(
-            # RESTAURADO: Modelo original mantido conforme solicitado.
-            model="gpt-5-nano-2025-08-07",
-            messages=[
-                {"role": "system", "content": "Você é um coach de vendas que analisa transcrições em formato WebVTT."},
-                {"role": "user", "content": prompt}
-            ]
+        # 2. Adiciona a transcrição como uma mensagem na Thread
+        client.beta.threads.messages.create(
+            thread_id=thread.id,
+            role="user",
+            content=f"Analise a seguinte transcrição de chamada:\n\n---\n\n{vtt_content}"
         )
-        analysis_result = response.choices[0].message.content
-        print("  -> Análise da IA concluída com sucesso.")
+        print("    -> Mensagem com a transcrição enviada para a thread.")
+
+        # 3. Executa o Assistant
+        run = client.beta.threads.runs.create(
+            thread_id=thread.id,
+            assistant_id=OPENAI_ASSISTANT_ID
+        )
+        print(f"    -> Assistant executado com Run ID: {run.id}. Aguardando conclusão...")
+
+        # 4. Polling: Verifica o status da execução até ser concluída
+        while run.status not in ["completed", "failed", "cancelled"]:
+            time.sleep(2) # Espera 2 segundos entre as verificações
+            run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+            print(f"    -> Status atual: {run.status}")
+
+        if run.status == "failed":
+            raise Exception(f"A execução do Assistant falhou. Causa: {run.last_error.message}")
+        if run.status == "cancelled":
+             raise Exception("A execução do Assistant foi cancelada.")
+
+        # 5. Recupera a resposta do Assistant
+        messages = client.beta.threads.messages.list(thread_id=thread.id)
+        assistant_message = messages.data[0]
+        
+        # A resposta estará dentro de um bloco de texto, que esperamos ser um JSON
+        json_response_str = assistant_message.content[0].text.value
+        
+        # Valida e converte a string para um objeto JSON (para garantir que está correta)
+        analysis_result_json = json.loads(json_response_str)
+
+        print("  -> Análise JSON da IA recebida com sucesso.")
 
         print(f"  -> SUCESSO! Enviando webhook para: {webhook_url}")
         requests.patch(webhook_url, json={
             "status": "COMPLETED",
             "transcription": vtt_content,
-            "analysis": analysis_result
+            # Enviamos o JSON como uma string no corpo da requisição
+            "analysis": json.dumps(analysis_result_json) 
         }, timeout=10)
 
     except Exception as e:
@@ -154,7 +175,7 @@ def process_audio_task(task_id: str, audio_path: str):
             )
             print("  -> Webhook de falha enviado com sucesso para o backend.")
         except requests.RequestException as req_e:
-            print(f"  -> FALHA ADICIONAL: Não foi possível notificar o backend sobre o erro. Erro do Request: {req_e}")
+            print(f"  -> FALHA ADICIONAL: Não foi possível notificar o backend. Erro: {req_e}")
     
     finally:
         print(f"[Worker Celery] Limpando cache da GPU para a tarefa {task_id}.")

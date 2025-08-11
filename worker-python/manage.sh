@@ -5,7 +5,7 @@
 # ATENÇÃO: Verifique se este caminho corresponde ao seu ambiente virtual.
 # O caminho que você forneceu (.\.venv\Scripts\activate) foi convertido para o formato Bash.
 # Se sua pasta venv ou projeto estiver em outro lugar, ajuste o caminho aqui.
-VENV_ACTIVATE_PATH="venv/Scripts/activate"
+VENV_ACTIVATE_PATH=".venv/Scripts/activate"
 
 # Nome do container Docker para o Redis
 REDIS_CONTAINER_NAME="ia-redis-server"
