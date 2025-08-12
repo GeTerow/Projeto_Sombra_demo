@@ -1,184 +1,418 @@
 # tasks.py
 import os
+import logging
 import requests
 import whisperx
 import torch
 import gc
 import tempfile
-import openai
 import traceback
-import time # NOVO: Import para polling
-import json # NOVO: Import para carregar a resposta JSON
+import time
+import json
+import re
+from typing import Any, Dict, Optional, Tuple
+from functools import lru_cache
+
+import openai  # compatibilidade
+from openai import OpenAI
+from dotenv import load_dotenv
 
 from celery_app import celery_app
-from dotenv import load_dotenv
+
 load_dotenv()
 
-# --- Configuração Inicial ---
-print("Iniciando a configuracao do Worker de IA...")
+# -----------------------------------------------------------------------------
+# Logging
+# -----------------------------------------------------------------------------
+logger = logging.getLogger("ai_worker")
+handler = logging.StreamHandler()
+formatter = logging.Formatter(
+    "%(asctime)s | %(levelname)s | %(name)s | %(message)s", "%Y-%m-%d %H:%M:%S"
+)
+handler.setFormatter(formatter)
+if not logger.handlers:
+    logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+logger.propagate = False  # evita logs duplicados
+logger.info("Iniciando a configuração do Worker de IA...")
 
+# -----------------------------------------------------------------------------
+# Env/Config
+# -----------------------------------------------------------------------------
 NODE_BACKEND_URL = os.getenv("NODE_BACKEND_URL", "http://localhost:3001")
 HF_TOKEN = os.getenv("HF_TOKEN")
-openai.api_key = os.getenv("OPENAI_API_KEY")
-# NOVO: Adicione o ID do seu Assistant no arquivo .env
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_ASSISTANT_ID = os.getenv("OPENAI_ASSISTANT_ID")
+ASSISTANT_MAX_WAIT_S = int(os.getenv("ASSISTANT_MAX_WAIT_S", "300"))
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-BATCH_SIZE = 8
-COMPUTE_TYPE = "float16" if torch.cuda.is_available() else "int8"
+# WhisperX
+WHISPERX_MODEL = os.getenv("WHISPERX_MODEL", "large-v3")
 
-# --- Validação de Configuração Essencial ---
-if not openai.api_key:
-    print("ERRO CRÍTICO: A variável de ambiente OPENAI_API_KEY não foi definida.")
+# IMPORTANTE: diarização e alinhamento no CPU para poupar VRAM do GPU
+DIAR_DEVICE = os.getenv("DIAR_DEVICE", "cpu")
+ALIGN_DEVICE = os.getenv("ALIGN_DEVICE", "cpu")
+
+# Compat com SDK antigo
+if OPENAI_API_KEY:
+    openai.api_key = OPENAI_API_KEY
+
+# -----------------------------------------------------------------------------
+# Device detection
+# -----------------------------------------------------------------------------
+def detect_device() -> str:
+    if torch.cuda.is_available():
+        return "cuda"
+    if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+DEVICE = detect_device()
+
+# Mantemos FP16 no CUDA conforme solicitado. Batch pequeno (2) para 8GB.
+if DEVICE == "cuda":
+    COMPUTE_TYPE = os.getenv("WHISPERX_COMPUTE_TYPE", "float16")
+    BATCH_SIZE = int(os.getenv("WHISPERX_BATCH_SIZE", "2"))
+elif DEVICE == "mps":
+    COMPUTE_TYPE = os.getenv("WHISPERX_COMPUTE_TYPE", "float32")
+    BATCH_SIZE = int(os.getenv("WHISPERX_BATCH_SIZE", "4"))
+else:
+    COMPUTE_TYPE = os.getenv("WHISPERX_COMPUTE_TYPE", "int8")
+    BATCH_SIZE = int(os.getenv("WHISPERX_BATCH_SIZE", "4"))
+
+logger.info(f"Dispositivo detectado: {DEVICE} | compute_type={COMPUTE_TYPE} | batch_size={BATCH_SIZE}")
+
+# -----------------------------------------------------------------------------
+# Validação de configuração
+# -----------------------------------------------------------------------------
+config_errors = []
+if not OPENAI_API_KEY:
+    config_errors.append("OPENAI_API_KEY não definida")
 if not HF_TOKEN:
-    print("ERRO CRÍTICO: A variável de ambiente HF_TOKEN não foi definida.")
-# NOVO: Validação do ID do Assistant
+    config_errors.append("HF_TOKEN não definida (Hugging Face)")
 if not OPENAI_ASSISTANT_ID:
-    print("ERRO CRÍTICO: A variável de ambiente OPENAI_ASSISTANT_ID não foi definida.")
+    config_errors.append("OPENAI_ASSISTANT_ID não definida")
 if not NODE_BACKEND_URL:
-     print("AVISO: A variável de ambiente NODE_BACKEND_URL não foi definida.")
+    logger.warning("AVISO: NODE_BACKEND_URL não definida; usando http://localhost:3001")
 
-# --- Carregamento dos Modelos ---
-print(f"Dispositivo: {DEVICE}. Carregando modelo WhisperX (large-v3)...")
-model = whisperx.load_model("large-v3", DEVICE, compute_type=COMPUTE_TYPE)
+if config_errors:
+    msg = "ERRO CRÍTICO de configuração: " + "; ".join(config_errors)
+    logger.error(msg)
+    raise RuntimeError(msg)
 
-print("Carregando modelo de Diarizacao...")
-if not HF_TOKEN:
-    raise ValueError("Token do Hugging Face (HF_TOKEN) não encontrado.")
-diarize_model = whisperx.DiarizationPipeline(use_auth_token=HF_TOKEN, device=DEVICE)
+# -----------------------------------------------------------------------------
+# Cache e utilitários de modelo
+# -----------------------------------------------------------------------------
+# Cache de alinhamento por (idioma, device), pois device influencia o modelo
+ALIGN_MODELS_CACHE: Dict[Tuple[str, str], Tuple[Any, Any]] = {}
 
-ALIGN_MODELS_CACHE = {}
-print(">> Modelos carregados com sucesso. Worker pronto para receber tarefas.")
-
-@celery_app.task
-def process_audio_task(task_id: str, audio_path: str):
+@lru_cache(maxsize=1)
+def load_whisperx_models() -> Tuple[Any, Any]:
     """
-    Função principal que executa todo o pipeline de análise de áudio.
+    Carrega e cacheia os modelos principais (WhisperX e Diarization).
+    WhisperX no DEVICE com compute_type definido; Diarização no DIAR_DEVICE (CPU).
     """
-    print(f"[Worker Celery] Iniciando processamento para a Tarefa ID: {task_id}")
-    webhook_url = f"{NODE_BACKEND_URL}/api/v1/tasks/{task_id}/complete"
-    
-    if not os.path.exists(audio_path):
-        error_message = f"Arquivo de áudio não encontrado pelo WORKER em: {audio_path}."
-        print(f"  -> FALHA! {error_message}")
+    logger.info(f"Carregando WhisperX ({WHISPERX_MODEL}) em {DEVICE} (compute_type={COMPUTE_TYPE})...")
+    model = whisperx.load_model(WHISPERX_MODEL, DEVICE, compute_type=COMPUTE_TYPE)
+
+    logger.info(f"Carregando modelo de Diarização no device={DIAR_DEVICE}...")
+    try:
+        diarize_model = whisperx.DiarizationPipeline(use_auth_token=HF_TOKEN, device=DIAR_DEVICE)
+    except TypeError:
+        diarize_model = whisperx.DiarizationPipeline(hf_token=HF_TOKEN, device=DIAR_DEVICE)
+
+    logger.info("Modelos carregados com sucesso.")
+    return model, diarize_model
+
+def get_align_model(language_code: str, device: str = ALIGN_DEVICE) -> Tuple[Any, Any]:
+    """
+    Carrega (com cache) o modelo de alinhamento para um idioma específico no device solicitado.
+    """
+    key = (language_code, device)
+    if key not in ALIGN_MODELS_CACHE:
+        logger.info(f"Carregando modelo de alinhamento para idioma: {language_code} em {device}")
+        model_a, metadata = whisperx.load_align_model(language_code=language_code, device=device)
+        ALIGN_MODELS_CACHE[key] = (model_a, metadata)
+    else:
+        logger.info(f"Reutilizando modelo de alinhamento cacheado para '{language_code}' em {device}.")
+    return ALIGN_MODELS_CACHE[key]
+
+# -----------------------------------------------------------------------------
+# Utilitários gerais
+# -----------------------------------------------------------------------------
+def notify_backend(webhook_url: str, payload: Dict[str, Any], timeout: int = 20) -> None:
+    try:
+        resp = requests.patch(webhook_url, json=payload, timeout=timeout)
+        if resp.status_code >= 400:
+            logger.error(f"Webhook retornou status {resp.status_code}: {resp.text}")
+    except requests.RequestException as req_e:
+        logger.error(f"Falha ao notificar backend em {webhook_url}: {req_e}")
+
+def generate_vtt(segments_obj: Dict[str, Any], audio_path: str) -> str:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        writer = whisperx.utils.WriteVTT(output_dir=temp_dir)
+        writer(
+            segments_obj,
+            audio_path,
+            {"max_line_width": None, "max_line_count": None, "highlight_words": False},
+        )
+        output_vtt_path = os.path.join(
+            temp_dir, os.path.splitext(os.path.basename(audio_path))[0] + ".vtt"
+        )
+        with open(output_vtt_path, "r", encoding="utf-8") as f:
+            return f.read()
+
+def extract_json_from_text(text: str) -> Dict[str, Any]:
+    # 1) Direto
+    try:
+        return json.loads(text)
+    except Exception:
+        pass
+    # 2) Bloco ```json ... ```
+    code_block = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text, re.IGNORECASE)
+    if code_block:
+        candidate = code_block.group(1).strip()
         try:
-            requests.patch(webhook_url, json={"status": "FAILED", "analysis": error_message}, timeout=10)
-        except requests.RequestException as req_e:
-            print(f"  -> FALHA ADICIONAL: Não foi possível notificar o backend. Erro: {req_e}")
+            return json.loads(candidate)
+        except Exception:
+            pass
+    # 3) Heurística de chaves
+    first = text.find("{")
+    last = text.rfind("}")
+    if first != -1 and last != -1 and last > first:
+        candidate = text[first : last + 1].strip()
+        try:
+            return json.loads(candidate)
+        except Exception:
+            pass
+    raise ValueError("Não foi possível extrair um JSON válido da resposta do Assistant.")
+
+def run_openai_assistant(vtt_content: str, max_wait_s: int = ASSISTANT_MAX_WAIT_S) -> Dict[str, Any]:
+    if not OPENAI_API_KEY or not OPENAI_ASSISTANT_ID:
+        raise RuntimeError("OPENAI_API_KEY ou OPENAI_ASSISTANT_ID ausentes.")
+
+    client = OpenAI(api_key=OPENAI_API_KEY)
+
+    thread = client.beta.threads.create()
+    logger.info(f"Thread criada: {thread.id}")
+
+    prompt = (
+        "Analise a seguinte transcrição de chamada (formato VTT) e RETORNE EXCLUSIVAMENTE um JSON válido, "
+        "sem qualquer texto adicional. Se não puder analisar, retorne um JSON como "
+        '{"erro": "<motivo>"}.\n\n---\n\n'
+        f"{vtt_content}"
+    )
+    client.beta.threads.messages.create(
+        thread_id=thread.id,
+        role="user",
+        content=prompt,
+    )
+    logger.info("Transcrição enviada à thread do Assistant.")
+
+    run = client.beta.threads.runs.create(
+        thread_id=thread.id,
+        assistant_id=OPENAI_ASSISTANT_ID,
+        tool_choice="none",
+    )
+    logger.info(f"Run iniciada: {run.id} (aguardando conclusão)")
+
+    start = time.time()
+    sleep_s = 2.0
+    terminal_status = {"completed", "failed", "cancelled", "expired"}
+    while True:
+        run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+        status = run.status
+        logger.info(f"Status atual do run: {status}")
+
+        if status in terminal_status:
+            break
+
+        if status == "requires_action":
+            try:
+                client.beta.threads.runs.cancel(thread_id=thread.id, run_id=run.id)
+            except Exception:
+                pass
+            raise RuntimeError("Assistant solicitou ação (tools), mas ferramentas estão desabilitadas.")
+
+        if time.time() - start > max_wait_s:
+            try:
+                client.beta.threads.runs.cancel(thread_id=thread.id, run_id=run.id)
+            except Exception:
+                pass
+            raise TimeoutError(f"Tempo máximo de espera ({max_wait_s}s) excedido para execução do Assistant.")
+
+        time.sleep(sleep_s)
+        sleep_s = min(5.0, sleep_s + 0.5)
+
+    if run.status == "failed":
+        last_error = getattr(run, "last_error", None)
+        reason = getattr(last_error, "message", "Motivo não informado")
+        raise RuntimeError(f"A execução do Assistant falhou. Causa: {reason}")
+    if run.status in {"cancelled", "expired"}:
+        raise RuntimeError(f"A execução do Assistant terminou com status: {run.status}")
+
+    messages = client.beta.threads.messages.list(thread_id=thread.id)
+    assistant_text_parts = []
+    for m in messages.data:
+        if getattr(m, "role", "") != "assistant":
+            continue
+        for part in getattr(m, "content", []):
+            if getattr(part, "type", "") == "text" and getattr(part, "text", None):
+                assistant_text_parts.append(part.text.value or "")
+        if assistant_text_parts:
+            break
+
+    if not assistant_text_parts:
+        raise RuntimeError("Não foi possível localizar a mensagem do Assistant com conteúdo de texto.")
+
+    assistant_text = "\n".join(assistant_text_parts).strip()
+    analysis_json = extract_json_from_text(assistant_text)
+    logger.info("Análise JSON da IA obtida com sucesso.")
+    return analysis_json
+
+# -----------------------------------------------------------------------------
+# Task Celery
+# -----------------------------------------------------------------------------
+@celery_app.task(name="process_audio_task")
+def process_audio_task(task_id: str, audio_path: str) -> None:
+    """
+    Pipeline:
+      1) Carrega audio
+      2) Transcreve (GPU FP16, batch pequeno)
+      3) Alinha (CPU)
+      4) Diariza (CPU)
+      5) Gera VTT
+      6) Assistant -> JSON
+      7) Webhook backend
+    """
+    logger.info(f"[Worker Celery] Iniciando processamento | task_id={task_id}")
+    webhook_url = f"{NODE_BACKEND_URL}/api/v1/tasks/{task_id}/complete"
+
+    if not os.path.exists(audio_path):
+        error_message = f"Arquivo de áudio não encontrado: {audio_path}"
+        logger.error(error_message)
+        notify_backend(webhook_url, {"status": "FAILED", "analysis": error_message})
         return
 
+    audio = None
+    result_transcribe = None
+    result_aligned = None
+    diarize_segments = None
+    result_for_writer = None
+    vtt_content = ""
+
     try:
-        # Etapas 1-5 ... (sem mudanças)
-        print(f"  -> Carregando áudio de: {audio_path}")
-        audio = whisperx.load_audio(audio_path)
-        
-        print("  -> Etapa 1: Transcrevendo...")
-        result_transcribe = model.transcribe(audio, batch_size=BATCH_SIZE)
-        language_code = result_transcribe.get("language", "pt")
-        
-        print(f"  -> Etapa 2: Alinhando transcrição (idioma: {language_code})...")
-        if language_code not in ALIGN_MODELS_CACHE:
-            print(f"    -> Carregando modelo de alinhamento para '{language_code}'...")
-            model_a, metadata = whisperx.load_align_model(language_code=language_code, device=DEVICE)
-            ALIGN_MODELS_CACHE[language_code] = (model_a, metadata)
-        else:
-            print(f"    -> Reutilizando modelo de alinhamento para '{language_code}'.")
-        model_a, metadata = ALIGN_MODELS_CACHE[language_code]
-        result_aligned = whisperx.align(result_transcribe["segments"], model_a, metadata, audio, DEVICE, return_char_alignments=False)
-        
-        print("  -> Etapa 3: Diarizando para identificar locutores...")
-        diarize_segments = diarize_model(audio)
-        
-        print("  -> Etapa 4: Atribuindo locutores às falas...")
-        result_final = whisperx.assign_word_speakers(diarize_segments, result_aligned)
-        result_final["language"] = language_code
-        
-        print("  -> Etapa 5: Gerando o texto final no formato VTT...")
-        vtt_content = ""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            writer = whisperx.utils.WriteVTT(output_dir=temp_dir)
-            writer(result_final, audio_path, {"max_line_width": None, "max_line_count": None, "highlight_words": False})
-            output_vtt_path = os.path.join(temp_dir, os.path.splitext(os.path.basename(audio_path))[0] + ".vtt")
-            with open(output_vtt_path, 'r', encoding='utf-8') as f:
-                vtt_content = f.read()
-        
-        # --- ETAPA 6: LÓGICA DO ASSISTANT (ATUALIZADA) ---
-        print("  -> Etapa 6: Interagindo com o OpenAI Assistant...")
-        if not openai.api_key or not OPENAI_ASSISTANT_ID:
-             raise ValueError("Chave da API OpenAI ou ID do Assistant não configurados.")
+        model, diarize_model = load_whisperx_models()
 
-        client = openai.OpenAI()
+        logger.info(f"Carregando áudio: {audio_path}")
+        with torch.inference_mode():
+            audio = whisperx.load_audio(audio_path)
 
-        # 1. Cria uma Thread
-        thread = client.beta.threads.create()
-        print(f"    -> Thread criada com ID: {thread.id}")
+            # 1) Transcrição (GPU FP16) com fallback de batch
+            logger.info("Etapa 1: Transcrevendo...")
+            try:
+                result_transcribe = model.transcribe(audio, batch_size=BATCH_SIZE)
+            except RuntimeError as e:
+                if "out of memory" in str(e).lower() and DEVICE == "cuda":
+                    logger.warning("CUDA OOM na transcrição. Tentando novamente com batch_size=1...")
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                    result_transcribe = model.transcribe(audio, batch_size=1)
+                else:
+                    raise
 
-        # 2. Adiciona a transcrição como uma mensagem na Thread
-        client.beta.threads.messages.create(
-            thread_id=thread.id,
-            role="user",
-            content=f"Analise a seguinte transcrição de chamada:\n\n---\n\n{vtt_content}"
-        )
-        print("    -> Mensagem com a transcrição enviada para a thread.")
+            if not result_transcribe or not result_transcribe.get("segments"):
+                raise RuntimeError("Transcrição vazia ou inválida.")
 
-        # 3. Executa o Assistant
-        run = client.beta.threads.runs.create(
-            thread_id=thread.id,
-            assistant_id=OPENAI_ASSISTANT_ID
-        )
-        print(f"    -> Assistant executado com Run ID: {run.id}. Aguardando conclusão...")
+            language_code = result_transcribe.get("language", "pt")
+            logger.info(f"Idioma detectado: {language_code}")
 
-        # 4. Polling: Verifica o status da execução até ser concluída
-        while run.status not in ["completed", "failed", "cancelled"]:
-            time.sleep(2) # Espera 2 segundos entre as verificações
-            run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
-            print(f"    -> Status atual: {run.status}")
+            if DEVICE == "cuda":
+                torch.cuda.empty_cache()
 
-        if run.status == "failed":
-            raise Exception(f"A execução do Assistant falhou. Causa: {run.last_error.message}")
-        if run.status == "cancelled":
-             raise Exception("A execução do Assistant foi cancelada.")
+            # 2) Alinhamento (CPU)
+            logger.info("Etapa 2: Alinhando (CPU)...")
+            model_a, metadata = get_align_model(language_code, device=ALIGN_DEVICE)
+            result_aligned = whisperx.align(
+                result_transcribe["segments"],
+                model_a,
+                metadata,
+                audio,
+                ALIGN_DEVICE,
+                return_char_alignments=False,
+            )
 
-        # 5. Recupera a resposta do Assistant
-        messages = client.beta.threads.messages.list(thread_id=thread.id)
-        assistant_message = messages.data[0]
-        
-        # A resposta estará dentro de um bloco de texto, que esperamos ser um JSON
-        json_response_str = assistant_message.content[0].text.value
-        
-        # Valida e converte a string para um objeto JSON (para garantir que está correta)
-        analysis_result_json = json.loads(json_response_str)
+            if DEVICE == "cuda":
+                torch.cuda.empty_cache()
 
-        print("  -> Análise JSON da IA recebida com sucesso.")
+            # 3) Diarização (CPU)
+            logger.info("Etapa 3: Diarizando (CPU)...")
+            try:
+                diarize_segments = diarize_model(audio_path)
+            except Exception as d_err:
+                diarize_segments = None
+                logger.error(f"Falha na diarização: {d_err}. Continuando sem diarização.")
 
-        print(f"  -> SUCESSO! Enviando webhook para: {webhook_url}")
-        requests.patch(webhook_url, json={
+            # 4) Atribuição de locutores (se diarização ok)
+            logger.info("Etapa 4: Atribuindo locutores (se disponíveis)...")
+            if diarize_segments is not None:
+                try:
+                    result_with_speakers = whisperx.assign_word_speakers(diarize_segments, result_aligned)
+                    result_with_speakers["language"] = language_code
+                    result_for_writer = result_with_speakers
+                except Exception as assign_err:
+                    logger.error(f"Falha ao atribuir locutores: {assign_err}. Usando transcrição sem locutores.")
+                    result_aligned["language"] = language_code
+                    result_for_writer = result_aligned
+            else:
+                result_aligned["language"] = language_code
+                result_for_writer = result_aligned
+
+            if DEVICE == "cuda":
+                torch.cuda.empty_cache()
+
+            # 5) VTT
+            logger.info("Etapa 5: Gerando VTT...")
+            vtt_content = generate_vtt(result_for_writer, audio_path)
+
+        # 6) Assistant (JSON)
+        logger.info("Etapa 6: Enviando transcrição ao OpenAI Assistant...")
+        analysis_result_json = run_openai_assistant(vtt_content)
+
+        # 7) Notifica backend
+        payload = {
             "status": "COMPLETED",
             "transcription": vtt_content,
-            # Enviamos o JSON como uma string no corpo da requisição
-            "analysis": json.dumps(analysis_result_json) 
-        }, timeout=10)
+            "analysis": json.dumps(analysis_result_json, ensure_ascii=False),
+        }
+        logger.info(f"Enviando webhook de sucesso para: {webhook_url}")
+        notify_backend(webhook_url, payload)
 
     except Exception as e:
         full_traceback = traceback.format_exc()
-        error_message = f"Erro crítico ao processar a tarefa {task_id}: {str(e)}"
-        
-        print(f"  -> FALHA! {error_message}")
-        print("  -> Stack Trace Completo:")
-        print(full_traceback)
-        
-        try:
-            requests.patch(
-                webhook_url, 
-                json={"status": "FAILED", "analysis": f"{error_message}\n\nTraceback:\n{full_traceback}"},
-                timeout=10
-            )
-            print("  -> Webhook de falha enviado com sucesso para o backend.")
-        except requests.RequestException as req_e:
-            print(f"  -> FALHA ADICIONAL: Não foi possível notificar o backend. Erro: {req_e}")
-    
+        error_message = f"Erro ao processar a tarefa {task_id}: {e}"
+        logger.error(error_message)
+        logger.error("Stack Trace completo:")
+        logger.error(full_traceback)
+
+        notify_backend(
+            webhook_url,
+            {
+                "status": "FAILED",
+                "analysis": f"{error_message}\n\nTraceback:\n{full_traceback}",
+            },
+        )
+
     finally:
-        print(f"[Worker Celery] Limpando cache da GPU para a tarefa {task_id}.")
+        # Limpeza de memória
+        logger.info(f"[Worker Celery] Limpando memória para a tarefa {task_id}...")
+        for var in ["audio", "result_transcribe", "result_aligned", "diarize_segments", "result_for_writer"]:
+            try:
+                del locals()[var]
+            except Exception:
+                pass
+
         gc.collect()
-        if DEVICE == "cuda":
+        if DEVICE == "cuda" and torch.cuda.is_available():
             torch.cuda.empty_cache()
+
+        logger.info(f"[Worker Celery] Finalizado processamento | task_id={task_id}")

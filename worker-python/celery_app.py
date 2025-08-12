@@ -1,17 +1,18 @@
 # celery_app.py
+import os
 from celery import Celery
 
+# Use REDIS_URL do .env se disponível
+REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6380/0')
 
-# NOVO: Define a aplicação Celery, conectando-a ao nosso broker Redis.
-# O 'backend' também é Redis, usado para armazenar resultados (opcional para o nosso caso, mas boa prática).
 celery_app = Celery(
     'audio_worker',
-    broker='redis://localhost:6380/0',
-    backend='redis://localhost:6380/0',
-    include=['tasks']
+    broker=REDIS_URL,
+    backend=REDIS_URL,
+    include=['tasks'],  # garante que tasks.py será registrado
 )
 
-# Configuração opcional para garantir que as tarefas sejam tratadas de forma robusta
+# Config robusta + serialização
 celery_app.conf.update(
     task_track_started=True,
     task_serializer='json',
@@ -19,4 +20,13 @@ celery_app.conf.update(
     accept_content=['json'],
     timezone='UTC',
     enable_utc=True,
+
+    # MUITO IMPORTANTE p/ evitar duas transcrições simultâneas no mesmo GPU
+    worker_concurrency=int(os.getenv('CELERY_CONCURRENCY', '1')),
+    worker_prefetch_multiplier=int(os.getenv('CELERY_PREFETCH', '1')),
+    task_acks_late=True,
+    task_reject_on_worker_lost=True,
+
+    # Opcional: reciclar worker para evitar fragmentação (especialmente em CUDA)
+    worker_max_tasks_per_child=int(os.getenv('CELERY_MAX_TASKS_PER_CHILD', '20')),
 )
