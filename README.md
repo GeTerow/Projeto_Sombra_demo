@@ -1,4 +1,4 @@
-````markdown
+markdown
 # Análise de Vendas com IA
 
 Este projeto é uma aplicação web full-stack projetada para fazer upload e analisar gravações de chamadas de vendas. A plataforma transcreve o áudio, identifica os interlocutores e utiliza um assistente de IA para gerar insights sobre o desempenho da vendedora, destacando pontos fortes e oportunidades de melhoria.
