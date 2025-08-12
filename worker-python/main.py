@@ -103,14 +103,21 @@ def generate_summary(request: GenerateSummaryRequest):
 
     Sua tarefa é sintetizar essas análises em um único documento coeso e construtivo. O documento deve ser em formato de markdown, direcionado para a vendedora, bem detalhado e sempre dando exemplos concretos das ligações.
 
+    **Regras obrigatórias de formatação:**
+    - Sempre coloque títulos, subtítulos e tópicos importantes em **negrito** usando `**texto**`.
+    - Nas seções de "Oportunidades de Desenvolvimento", **os subtópicos devem obrigatoriamente vir em negrito** assim:
+         **O que melhorar:**
+         **Como isso se manifestou (Exemplo prático):**
+         **Como pode ser diferente (Sugestão de melhoria):**
+
     Estruture o documento da seguinte forma:
 
     1.  **Visão Geral do Desempenho:** Comece com um parágrafo de abertura, reconhecendo o esforço e o volume de trabalho recente de {request.name}.
     2.  **Padrões de Destaque (Pontos Fortes):** Identifique e liste em tópicos os pontos fortes que aparecem consistentemente nas transcrições. Essa parte pode ser mais resumida.
     3.  **Oportunidades de Desenvolvimento (Pontos a Melhorar):** Identifique os principais pontos de melhoria recorrentes. Para cada ponto, detalhe extensivamente de forma construtiva, usando obrigatoriamente a seguinte estrutura:
-        * **O que melhorar:** Identifique a competência ou o comportamento a ser desenvolvido (Ex: Condução da fase de descoberta, contorno de objeções de preço, etc.).
-        * **Como isso se manifestou (Exemplo prático):** Descreva uma ou mais situações específicas das ligações em que isso foi notado. Seja específico, citando o contexto e, se possível, trechos que ilustrem o ponto.
-        * **Como pode ser diferente (Sugestão de melhoria):** Ofereça uma sugestão clara e prática sobre como agir de forma diferente em situações futuras para obter um resultado melhor. Dê exemplos de frases ou abordagens alternativas.
+         **O que melhorar:** Identifique a competência ou o comportamento a ser desenvolvido (Ex: Condução da fase de descoberta, contorno de objeções de preço, etc.).
+         **Como isso se manifestou (Exemplo prático):** Descreva uma ou mais situações específicas das ligações em que isso foi notado. Seja específico, citando o contexto e, se possível, trechos que ilustrem o ponto.
+         **Como pode ser diferente (Sugestão de melhoria):** Ofereça uma sugestão clara e prática sobre como agir de forma diferente em situações futuras para obter um resultado melhor. Dê exemplos de frases ou abordagens alternativas.
     4.  **Plano de Ação Sugerido:** Com base nas oportunidades identificadas, sugira ações práticas, bem detalhadas e focadas que {request.name} pode implementar nas próximas semanas.
     
     Seja objetivo, claro e não economize palavras.

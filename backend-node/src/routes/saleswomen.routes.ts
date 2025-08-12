@@ -13,46 +13,65 @@ const SUMMARIES_DIR = path.resolve(__dirname, '..', '..', 'uploads', 'summaries'
 fs.mkdirSync(SUMMARIES_DIR, { recursive: true });
 
 
-const renderTextWithBold = (doc: PDFKit.PDFDocument, text: string) => {
-    // Garante que o texto de entrada seja uma string
-    const safeText = String(text || '');
+const renderTextWithBold = (
+  doc: PDFKit.PDFDocument,
+  text: string,
+  opts = {
+    normalFont: 'Helvetica',
+    boldFont: 'Helvetica-Bold',
+    fontSize: 12
+  }
+) => {
+  const safeText = String(text || '');
+  const paragraphs = safeText.split('\n');
 
-    // 1. Divide o texto em parágrafos
-    const paragraphs = safeText.split('\n');
-
-    for (const paragraph of paragraphs) {
-        // Se a linha estiver vazia, apenas adiciona um espaço vertical
-        if (paragraph.trim() === '') {
-            doc.moveDown();
-            continue;
-        }
-
-        const boldRegex = /\*\*(.*?)\*\*/g;
-        let lastIndex = 0;
-        let match;
-
-        // Itera sobre as ocorrências de negrito no parágrafo
-        while ((match = boldRegex.exec(paragraph)) !== null) {
-            // Adiciona o texto normal antes do negrito
-            const normalText = paragraph.substring(lastIndex, match.index);
-            if (normalText) {
-                doc.font('Helvetica').text(normalText, { continued: true });
-            }
-
-            // Adiciona o texto em negrito
-            const boldText = match[1];
-            if (boldText) {
-                doc.font('Helvetica-Bold').text(boldText, { continued: true });
-                doc.font('Helvetica').text(' ', { continued: true });
-            }
-
-            lastIndex = match.index + match[0].length;
-        }
-
-        const remainingText = paragraph.substring(lastIndex);
-
-        doc.font('Helvetica').text(remainingText, { align: 'justify' });
+  for (const paragraph of paragraphs) {
+    if (paragraph.trim() === '') {
+      doc.moveDown();
+      continue;
     }
+
+    const boldRegex = /\*\*(.+?)\*\*/g;
+    // se não tiver nenhum **...**, faz uma chamada única (melhor para justify)
+    if (!boldRegex.test(paragraph)) {
+      doc
+        .font(opts.normalFont)
+        .fontSize(opts.fontSize)
+        .text(paragraph, { align: 'justify' });
+      continue;
+    }
+
+    // reset do índice do regex porque test() avançou o lastIndex em alguns engines
+    boldRegex.lastIndex = 0;
+
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = boldRegex.exec(paragraph)) !== null) {
+      const normalText = paragraph.substring(lastIndex, match.index);
+      if (normalText) {
+        doc.font(opts.normalFont).fontSize(opts.fontSize).text(normalText, { continued: true });
+      }
+
+      const boldText = match[1] + ' ';
+      if (boldText) {
+        doc.font(opts.boldFont).fontSize(opts.fontSize).text(boldText, { continued: true });
+      }
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    const remainingText = paragraph.substring(lastIndex);
+
+    if (remainingText) {
+      // última chamada: continued: false e align: 'justify' aplica à linha/parágrafo inteiro
+      doc.font(opts.normalFont).fontSize(opts.fontSize).text(remainingText, { continued: false, align: 'justify' });
+    } else {
+      // se acabou num bloco em negrito (nenhum "remainingText"), precisamos terminar a cadeia
+      // Chamamos text('') para forçar o flush e aplicar o align ao parágrafo composto
+      doc.text('', { continued: false, align: 'justify' });
+    }
+  }
 };
 
 // ROTA POST PARA GERAR UM NOVO PDF
@@ -78,7 +97,7 @@ saleswomenRouter.post('/:id/generate-summary-pdf', async (req, res) => {
         }
 
         // Verifica o limite diário de gerações
-        if (saleswoman.summaryGenerationsToday >= 3) {
+        if (saleswoman.summaryGenerationsToday >= 5) {
             return res.status(429).json({ error: 'Limite de 3 gerações de resumo por dia atingido.' });
         }
 

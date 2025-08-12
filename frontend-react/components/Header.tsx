@@ -38,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onViewChange, theme
           <div className="flex items-center gap-3">
             <ChartBarIcon className="h-8 w-8 text-primary-500" />
             <h1 className="text-xl font-bold text-slate-800 dark:text-white">
-              Análise de Vendas
+              Projeto Sombra
             </h1>
           </div>
           <div className="flex items-center gap-4">
