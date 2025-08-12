@@ -18,7 +18,7 @@ celery_app.conf.update(
     task_serializer='json',
     result_serializer='json',
     accept_content=['json'],
-    timezone='UTC',
+    timezone='UTC',awda
     enable_utc=True,
 
     # MUITO IMPORTANTE p/ evitar duas transcrições simultâneas no mesmo GPU

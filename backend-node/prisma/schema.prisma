@@ -9,9 +9,13 @@ datasource db {
 
 enum TaskStatus {
   PENDING
-  PROCESSING
+  TRANSCRIBING // Adicionado
+  ALIGNING     // Adicionado
+  DIARIZING    // Adicionado
+  ANALYZING    // Adicionado
   COMPLETED
   FAILED
+  // PROCESSING   // Removido (opcional, mas recomendado para clareza)
 }
 
 // NOVA TABELA PARA AS VENDEDORAS
@@ -22,9 +26,10 @@ model Saleswoman {
 
   // NOVOS CAMPOS PARA O RESUMO EM PDF
   summaryPdfPath            String?
-  summaryLastGeneratedAt    DateTime?
+summaryLastGeneratedAt    DateTime?
   summaryGenerationsToday   Int       @default(0)
-  summaryLastGenerationDate DateTime? // Usado para resetar o contador diário
+  summaryLastGenerationDate DateTime?
+// Usado para resetar o contador diário
 
   @@map("saleswomen")
 }
@@ -34,7 +39,7 @@ model Task {
   clientName   String
   status       TaskStatus @default(PENDING)
   audioFilePath String
-  transcription String?    @db.Text
+  transcription String?   @db.Text
   analysis      Json?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt

@@ -140,10 +140,12 @@ def get_align_model(language_code: str, device: str = ALIGN_DEVICE) -> Tuple[Any
 # Utilitários gerais
 # -----------------------------------------------------------------------------
 def notify_backend(webhook_url: str, payload: Dict[str, Any], timeout: int = 20) -> None:
+    """Função modificada para aceitar qualquer payload e notificar o backend."""
     try:
+        # Usaremos o método PATCH, que é ideal para atualizações parciais.
         resp = requests.patch(webhook_url, json=payload, timeout=timeout)
         if resp.status_code >= 400:
-            logger.error(f"Webhook retornou status {resp.status_code}: {resp.text}")
+            logger.error(f"Webhook para {webhook_url} retornou status {resp.status_code}: {resp.text}")
     except requests.RequestException as req_e:
         logger.error(f"Falha ao notificar backend em {webhook_url}: {req_e}")
 
@@ -285,20 +287,14 @@ def process_audio_task(task_id: str, audio_path: str) -> None:
       7) Webhook backend
     """
     logger.info(f"[Worker Celery] Iniciando processamento | task_id={task_id}")
+    # O webhook_url agora aponta para o mesmo endpoint para todas as atualizações.
     webhook_url = f"{NODE_BACKEND_URL}/api/v1/tasks/{task_id}/complete"
 
     if not os.path.exists(audio_path):
         error_message = f"Arquivo de áudio não encontrado: {audio_path}"
         logger.error(error_message)
-        notify_backend(webhook_url, {"status": "FAILED", "analysis": error_message})
+        notify_backend(webhook_url, {"status": "FAILED", "analysis": {"error": error_message}})
         return
-
-    audio = None
-    result_transcribe = None
-    result_aligned = None
-    diarize_segments = None
-    result_for_writer = None
-    vtt_content = ""
 
     try:
         model, diarize_model = load_whisperx_models()
@@ -307,8 +303,9 @@ def process_audio_task(task_id: str, audio_path: str) -> None:
         with torch.inference_mode():
             audio = whisperx.load_audio(audio_path)
 
-            # 1) Transcrição (GPU FP16) com fallback de batch
+            # --- ETAPA 1: TRANSCRIÇÃO ---
             logger.info("Etapa 1: Transcrevendo...")
+            notify_backend(webhook_url, {"status": "TRANSCRIBING"})
             try:
                 result_transcribe = model.transcribe(audio, batch_size=BATCH_SIZE)
             except RuntimeError as e:
@@ -322,63 +319,39 @@ def process_audio_task(task_id: str, audio_path: str) -> None:
 
             if not result_transcribe or not result_transcribe.get("segments"):
                 raise RuntimeError("Transcrição vazia ou inválida.")
-
             language_code = result_transcribe.get("language", "pt")
             logger.info(f"Idioma detectado: {language_code}")
+            if DEVICE == "cuda": torch.cuda.empty_cache()
 
-            if DEVICE == "cuda":
-                torch.cuda.empty_cache()
-
-            # 2) Alinhamento (CPU)
-            logger.info("Etapa 2: Alinhando (CPU)...")
+            # --- ETAPA 2: ALINHAMENTO ---
+            logger.info("Etapa 2: Alinhando...")
+            notify_backend(webhook_url, {"status": "ALIGNING"})
             model_a, metadata = get_align_model(language_code, device=ALIGN_DEVICE)
             result_aligned = whisperx.align(
-                result_transcribe["segments"],
-                model_a,
-                metadata,
-                audio,
-                ALIGN_DEVICE,
-                return_char_alignments=False,
+                result_transcribe["segments"], model_a, metadata, audio, ALIGN_DEVICE, return_char_alignments=False
             )
+            if DEVICE == "cuda": torch.cuda.empty_cache()
 
-            if DEVICE == "cuda":
-                torch.cuda.empty_cache()
+            # --- ETAPA 3: DIARIZAÇÃO ---
+            logger.info("Etapa 3: Diarizando...")
+            notify_backend(webhook_url, {"status": "DIARIZING"})
+            diarize_segments = diarize_model(audio_path) # Removido try-except para ser mais estrito
+            
+            logger.info("Etapa 4: Atribuindo locutores...")
+            result_with_speakers = whisperx.assign_word_speakers(diarize_segments, result_aligned)
+            result_with_speakers["language"] = language_code
+            if DEVICE == "cuda": torch.cuda.empty_cache()
 
-            # 3) Diarização (CPU)
-            logger.info("Etapa 3: Diarizando (CPU)...")
-            try:
-                diarize_segments = diarize_model(audio_path)
-            except Exception as d_err:
-                diarize_segments = None
-                logger.error(f"Falha na diarização: {d_err}. Continuando sem diarização.")
-
-            # 4) Atribuição de locutores (se diarização ok)
-            logger.info("Etapa 4: Atribuindo locutores (se disponíveis)...")
-            if diarize_segments is not None:
-                try:
-                    result_with_speakers = whisperx.assign_word_speakers(diarize_segments, result_aligned)
-                    result_with_speakers["language"] = language_code
-                    result_for_writer = result_with_speakers
-                except Exception as assign_err:
-                    logger.error(f"Falha ao atribuir locutores: {assign_err}. Usando transcrição sem locutores.")
-                    result_aligned["language"] = language_code
-                    result_for_writer = result_aligned
-            else:
-                result_aligned["language"] = language_code
-                result_for_writer = result_aligned
-
-            if DEVICE == "cuda":
-                torch.cuda.empty_cache()
-
-            # 5) VTT
+            # --- ETAPA 5: VTT (rápido, sem notificação) ---
             logger.info("Etapa 5: Gerando VTT...")
-            vtt_content = generate_vtt(result_for_writer, audio_path)
+            vtt_content = generate_vtt(result_with_speakers, audio_path)
 
-        # 6) Assistant (JSON)
+        # --- ETAPA 6: ANÁLISE COM IA ---
         logger.info("Etapa 6: Enviando transcrição ao OpenAI Assistant...")
+        notify_backend(webhook_url, {"status": "ANALYZING"})
         analysis_result_json = run_openai_assistant(vtt_content)
 
-        # 7) Notifica backend
+        # --- ETAPA 7: FINALIZAÇÃO ---
         payload = {
             "status": "COMPLETED",
             "transcription": vtt_content,
@@ -391,28 +364,17 @@ def process_audio_task(task_id: str, audio_path: str) -> None:
         full_traceback = traceback.format_exc()
         error_message = f"Erro ao processar a tarefa {task_id}: {e}"
         logger.error(error_message)
-        logger.error("Stack Trace completo:")
-        logger.error(full_traceback)
-
+        logger.error("Stack Trace completo:"); logger.error(full_traceback)
         notify_backend(
             webhook_url,
-            {
-                "status": "FAILED",
-                "analysis": f"{error_message}\n\nTraceback:\n{full_traceback}",
-            },
+            {"status": "FAILED", "analysis": {"error": error_message, "traceback": full_traceback}},
         )
 
     finally:
         # Limpeza de memória
         logger.info(f"[Worker Celery] Limpando memória para a tarefa {task_id}...")
-        for var in ["audio", "result_transcribe", "result_aligned", "diarize_segments", "result_for_writer"]:
-            try:
-                del locals()[var]
-            except Exception:
-                pass
-
+        del audio, result_transcribe, result_aligned, diarize_segments, result_with_speakers
         gc.collect()
         if DEVICE == "cuda" and torch.cuda.is_available():
             torch.cuda.empty_cache()
-
         logger.info(f"[Worker Celery] Finalizado processamento | task_id={task_id}")

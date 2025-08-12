@@ -1,4 +1,4 @@
-export type TaskStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+export type TaskStatus = 'PENDING' | 'TRANSCRIBING' | 'ALIGNING' | 'DIARIZING' | 'ANALYZING' | 'COMPLETED' | 'FAILED';
 
 export interface SpeakerIdentification {
   salesperson: string;

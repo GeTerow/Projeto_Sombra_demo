@@ -12,7 +12,6 @@ const prisma = new PrismaClient();
 const SUMMARIES_DIR = path.resolve(__dirname, '..', '..', 'uploads', 'summaries');
 fs.mkdirSync(SUMMARIES_DIR, { recursive: true });
 
-// --- NOVAS ROTAS PARA GERAÇÃO E DOWNLOAD ---
 
 const renderTextWithBold = (doc: PDFKit.PDFDocument, text: string) => {
     // Garante que o texto de entrada seja uma string
@@ -50,10 +49,8 @@ const renderTextWithBold = (doc: PDFKit.PDFDocument, text: string) => {
             lastIndex = match.index + match[0].length;
         }
 
-        // Pega o texto restante após a última ocorrência de negrito
         const remainingText = paragraph.substring(lastIndex);
 
-        // Finaliza a linha com o texto restante e aplica a justificação
         doc.font('Helvetica').text(remainingText, { align: 'justify' });
     }
 };
@@ -61,7 +58,7 @@ const renderTextWithBold = (doc: PDFKit.PDFDocument, text: string) => {
 // ROTA POST PARA GERAR UM NOVO PDF
 saleswomenRouter.post('/:id/generate-summary-pdf', async (req, res) => {
     const { id } = req.params;
-    const { force } = req.body; // Flag de confirmação do frontend
+    const { force } = req.body;
 
     try {
         let saleswoman = await prisma.saleswoman.findUnique({ where: { id } });
@@ -80,12 +77,12 @@ saleswomenRouter.post('/:id/generate-summary-pdf', async (req, res) => {
             });
         }
 
-        // 1. Verifica o limite diário de gerações
-        if (saleswoman.summaryGenerationsToday >= 7) {
+        // Verifica o limite diário de gerações
+        if (saleswoman.summaryGenerationsToday >= 3) {
             return res.status(429).json({ error: 'Limite de 3 gerações de resumo por dia atingido.' });
         }
 
-        // 2. Verifica se um resumo foi gerado há menos de uma semana
+        // Verifica se um resumo foi gerado há menos de uma semana
         if (saleswoman.summaryLastGeneratedAt) {
             const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
             if (new Date(saleswoman.summaryLastGeneratedAt) > oneWeekAgo && !force) {
@@ -97,13 +94,12 @@ saleswomenRouter.post('/:id/generate-summary-pdf', async (req, res) => {
             }
         }
         
-        // --- CORREÇÃO APLICADA AQUI ---
-        // 3. Busca as tarefas para a análise
+        // Busca as tarefas para a análise
         const tasks = await prisma.task.findMany({
             where: { 
                 saleswomanId: id, 
                 status: 'COMPLETED', 
-                analysis: { not: Prisma.JsonNull } // Use Prisma.JsonNull em vez de null
+                analysis: { not: Prisma.JsonNull }
             },
             orderBy: { createdAt: 'desc' },
             take: 6
@@ -113,7 +109,7 @@ saleswomenRouter.post('/:id/generate-summary-pdf', async (req, res) => {
             return res.status(400).json({ error: 'Não há análises suficientes para gerar um resumo.' });
         }
 
-        // 4. Gera o resumo com a IA
+        // Gera o resumo com a IA
         const transcriptions = tasks.map(task => task.transcription).filter((t): t is string => t !== null);
         const workerUrl = `${process.env.PYTHON_WORKER_URL}/generate-summary`;
         const summaryResponse = await axios.post<{ summary: string }>(workerUrl, {
@@ -122,7 +118,7 @@ saleswomenRouter.post('/:id/generate-summary-pdf', async (req, res) => {
         });
         const summary = summaryResponse.data.summary;
 
-        // 5. Salva o PDF no servidor
+        // Salva o PDF no servidor
         const doc = new PDFDocument({ size: 'A4', margins: { top: 72, bottom: 72, left: 72, right: 72 } });
         const filePath = path.join(SUMMARIES_DIR, `summary-${id}-${Date.now()}.pdf`);
         const writeStream = fs.createWriteStream(filePath);
@@ -135,7 +131,7 @@ saleswomenRouter.post('/:id/generate-summary-pdf', async (req, res) => {
         renderTextWithBold(doc, summary);
         doc.end();
 
-        // 6. Atualiza o banco de dados com as novas informações
+        // Atualiza o banco de dados com as novas informações
         const updatedSaleswoman = await prisma.saleswoman.update({
             where: { id },
             data: {
@@ -146,7 +142,7 @@ saleswomenRouter.post('/:id/generate-summary-pdf', async (req, res) => {
             }
         });
 
-        // Opcional: deleta o PDF antigo se existir
+        //  Deleta o PDF antigo se existir
         if (saleswoman.summaryPdfPath && fs.existsSync(saleswoman.summaryPdfPath)) {
             fs.unlinkSync(saleswoman.summaryPdfPath);
         }
@@ -183,7 +179,7 @@ saleswomenRouter.get('/:id/download-summary-pdf', async (req, res) => {
 });
 
 
-// ROTA PARA LISTAR TODAS AS VENDEDORAS (COM OS NOVOS CAMPOS)
+// ROTA PARA LISTAR TODAS AS VENDEDORAS 
 saleswomenRouter.get('/', async (req, res) => {
     try {
         const saleswomen = await prisma.saleswoman.findMany({

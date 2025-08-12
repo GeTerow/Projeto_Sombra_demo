@@ -4,6 +4,7 @@ import { Spinner } from './Spinner';
 import { UploadIcon } from './icons/UploadIcon';
 import type { Task, Saleswoman } from '../types';
 import { API_URL } from '../config';
+import { UploadProgressTracker } from './UploadProgressTracker'; // Componente de progresso já importado
 
 export const AudioUploadForm: React.FC = () => {
     const [saleswomen, setSaleswomen] = useState<Saleswoman[]>([]);
@@ -13,8 +14,8 @@ export const AudioUploadForm: React.FC = () => {
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    // const [showTracker, setShowTracker] = useState(false); // <<< REMOVIDO: Este estado não é mais necessário
 
-    // Efeito para buscar a lista de vendedoras quando o componente montar
     useEffect(() => {
         axios.get<Saleswoman[]>(`${API_URL}/saleswomen`)
             .then(response => {
@@ -49,17 +50,19 @@ export const AudioUploadForm: React.FC = () => {
         formData.append('audio', audioFile);
 
         try {
-            const response = await axios.post< { task: Task } >(`${API_URL}/tasks`, formData, {
+            const response = await axios.post<{ task: Task }>(`${API_URL}/tasks`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
-            setStatusMessage(`Sucesso! A tarefa para o cliente ${response.data.task.clientName} foi criada e está em processamento.`);
+            setStatusMessage(`Sucesso! A análise para o cliente ${response.data.task.clientName} foi iniciada.`);
+            // setShowTracker(true); // <<< REMOVIDO: Não precisamos mais controlar a visibilidade
             
             // Limpa o formulário
             setSelectedSaleswomanId('');
             setClientName('');
             setAudioFile(null);
-            (document.getElementById('audio-file-input') as HTMLInputElement).value = "";
+            const fileInput = document.getElementById('audio-file-input') as HTMLInputElement;
+            if (fileInput) fileInput.value = "";
 
         } catch (err: any) {
             const message = err.response?.data?.error || err.message || 'Ocorreu um erro desconhecido.';
@@ -115,6 +118,9 @@ export const AudioUploadForm: React.FC = () => {
                         </button>
                     </div>
                 </form>
+
+                {/* MODIFICADO: O componente de progresso agora é renderizado incondicionalmente */}
+                <UploadProgressTracker />
             </div>
         </div>
     );
