@@ -161,9 +161,12 @@ tasksRouter.patch('/:id/complete', async (req, res) => {
 
     sendEventToClients(updatedTask);
 
+    // LINHAS REMOVIDAS: O bloco abaixo, que apagava o áudio, foi removido.
+    /*
     if ((status === 'COMPLETED' || status === 'FAILED') && fs.existsSync(taskToUpdate.audioFilePath)) {
       fs.unlinkSync(taskToUpdate.audioFilePath);
     }
+    */
 
     res.status(200).json({ message: 'Tarefa atualizada.', task: updatedTask });
   } catch (error) {
@@ -377,4 +380,17 @@ tasksRouter.get('/:id/pdf', async (req: Request, res: Response) => {
     console.error('Erro ao gerar PDF:', error);
     res.status(500).send('Não foi possível gerar o PDF.');
   }
+});
+
+tasksRouter.get('/:id/audio', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const task = await prisma.task.findUnique({ where: { id } });
+        if (!task || !task.audioFilePath) {
+            return res.status(404).json({ error: 'Arquivo de áudio não encontrado.' });
+        }
+        res.sendFile(task.audioFilePath);
+    } catch (error) {
+        res.status(500).json({ error: 'Falha ao buscar o arquivo de áudio.' });
+    }
 });
