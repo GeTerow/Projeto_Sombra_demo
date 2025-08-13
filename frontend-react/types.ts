@@ -1,28 +1,46 @@
 export type TaskStatus = 'PENDING' | 'TRANSCRIBING' | 'ALIGNING' | 'DIARIZING' | 'ANALYZING' | 'COMPLETED' | 'FAILED';
 
-export interface SpeakerIdentification {
-  salesperson: string;
-  customer: string;
-  reasoning: string;
+// --- NOVA ESTRUTURA DA ANÁLISE ---
+
+// Sub-tipo para cada estágio da performance
+export interface StageAnalysis {
+  score: number;
+  feedback: string;
+  improvementSuggestion: string;
 }
 
-export interface CrucialMoment {
-  momentTitle: string;
+// Sub-tipo para o perfil do cliente
+export interface CustomerProfile {
+  name: string;
+  profile: string;
+  communicationStyle: string;
+}
+
+// Sub-tipo para os pontos de melhoria
+export interface ImprovementPoint {
   salespersonLine: string;
-  problem: string;
-  improvement: string;
-  suggestedLine: string;
+  context: string;
+  suggestion: string;
 }
 
-export interface OverallFeedback {
-  summary: string;
-}
-
+// Interface principal e completa da Análise da IA
 export interface Analysis {
-  speakerIdentification: SpeakerIdentification;
-  crucialMoments: CrucialMoment[];
-  overallFeedback: OverallFeedback;
+  summary: string;
+  customerProfile: CustomerProfile;
+  performance: {
+    overallScore: number;
+    stages: {
+      opening: StageAnalysis;
+      discovery: StageAnalysis;
+      qualification: StageAnalysis;
+      closing: StageAnalysis;
+    };
+  };
+  improvementPoints: ImprovementPoint[];
 }
+
+// --- FIM DA NOVA ESTRUTURA ---
+
 
 export interface Saleswoman {
   id: string;
@@ -41,7 +59,7 @@ export interface Task {
   status: TaskStatus;
   audioFilePath: string;
   transcription: string | null;
-  analysis: Analysis | null;
+  analysis: Analysis | null; // Agora usará a nova estrutura de Análise
   createdAt: string;
   updatedAt: string;
 }

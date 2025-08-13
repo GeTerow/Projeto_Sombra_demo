@@ -1,9 +1,11 @@
+// frontend-react/App.tsx
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
 import { AudioUploadForm } from './components/AudioUploadForm';
 import { SaleswomenDashboard } from './components/SaleswomenDashboard';
 import { AnalysisDetailPage } from './components/AnalysisDetailPage';
-import { AddSaleswomanModal } from './components/AddSaleswomanModal'; // Certifique-se que o modal está importado
+import { AddSaleswomanModal } from './components/AddSaleswomanModal';
 
 export type View =
     | { name: 'upload' }
@@ -40,8 +42,6 @@ const App: React.FC = () => {
     }, []);
 
     const navigateTo = (viewName: 'upload' | 'dashboard') => {
-        // AQUI ESTÁ A CORREÇÃO: Adicionamos "as View" para dizer ao TypeScript
-        // que este objeto é de um tipo compatível com o estado 'currentView'.
         setCurrentView({ name: viewName } as View);
     };
 
@@ -63,10 +63,11 @@ const App: React.FC = () => {
                 return <SaleswomenDashboard
                             key={`dashboard-${version}`}
                             onSelectCall={navigateToAnalysis}
-                            // AQUI PASSAMOS A FUNÇÃO QUE ABRE O MODAL
                             onAddSaleswoman={() => setIsAddModalOpen(true)}
                         />;
             case 'analysis':
+                // CORREÇÃO APLICADA AQUI:
+                // As props 'callId' e 'onBack' estão sendo passadas corretamente.
                 return <AnalysisDetailPage
                             callId={currentView.callId}
                             onBack={() => navigateTo('dashboard')}
@@ -88,7 +89,6 @@ const App: React.FC = () => {
                 {renderContent()}
             </main>
             
-            {/* AQUI O MODAL É RENDERIZADO CONDICIONALMENTE */}
             {isAddModalOpen && (
                 <AddSaleswomanModal 
                     onClose={() => setIsAddModalOpen(false)} 
