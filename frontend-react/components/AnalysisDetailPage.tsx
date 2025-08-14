@@ -1,3 +1,5 @@
+// frontend-react/components/AnalysisDetailPage.tsx
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import type { Task } from '../types';

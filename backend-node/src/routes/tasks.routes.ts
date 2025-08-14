@@ -161,13 +161,6 @@ tasksRouter.patch('/:id/complete', async (req, res) => {
 
     sendEventToClients(updatedTask);
 
-    // LINHAS REMOVIDAS: O bloco abaixo, que apagava o áudio, foi removido.
-    /*
-    if ((status === 'COMPLETED' || status === 'FAILED') && fs.existsSync(taskToUpdate.audioFilePath)) {
-      fs.unlinkSync(taskToUpdate.audioFilePath);
-    }
-    */
-
     res.status(200).json({ message: 'Tarefa atualizada.', task: updatedTask });
   } catch (error) {
     console.error(`[Node Backend] Erro no webhook da tarefa ${id}:`, error);
