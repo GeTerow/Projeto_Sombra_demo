@@ -1,6 +1,6 @@
 import PDFDocument from 'pdfkit';
 import { Task, Saleswoman } from '@prisma/client';
-import { TaskAnalysis } from '../common/interfaces/types';
+import { ITaskAnalysis } from '../common/interfaces/ITaskAnalysis';
 
 // Tema de cores para o PDF.
 const THEME = {
@@ -48,7 +48,14 @@ export const generateTaskAnalysisPdf = (task: Task & { saleswoman: Saleswoman | 
     doc.on('data', buffers.push.bind(buffers));
     doc.on('end', () => resolve(Buffer.concat(buffers)));
 
-    const analysis = task.analysis as unknown as TaskAnalysis;
+    let analysis: ITaskAnalysis;
+    try {
+      analysis = typeof task.analysis === 'string'
+        ? JSON.parse(task.analysis)
+        : (task.analysis ?? {});
+    } catch {
+      analysis = {} as ITaskAnalysis;
+    }
 
     doc.fillColor(THEME.primary).font('Helvetica-Bold').fontSize(18).text('Relatório de Análise de Chamada');
     doc.moveDown(0.25);

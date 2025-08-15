@@ -1,16 +1,21 @@
 import { prisma } from '../lib/prisma';
 import crypto from 'node:crypto';
+import { IAppConfig } from '../common/interfaces/IAppConfig';
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default_encryption_key_must_be_32_bytes';
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
+
+if (!ENCRYPTION_KEY) {
+  throw new Error('A variável de ambiente ENCRYPTION_KEY não foi definida.');
+}
 if (ENCRYPTION_KEY.length !== 32) {
-    throw new Error('A ENCRYPTION_KEY deve ter exatamente 32 caracteres.');
+  throw new Error('A ENCRYPTION_KEY deve ter exatamente 32 caracteres.');
 }
 
 const IV_LENGTH = 16;
 
 function encrypt(text: string): string {
     const iv = crypto.randomBytes(IV_LENGTH);
-    const cipher = crypto.createCipheriv('aes-256-gcm', Buffer.from(ENCRYPTION_KEY), iv);
+    const cipher = crypto.createCipheriv('aes-256-gcm', Buffer.from(ENCRYPTION_KEY as string), iv);
     let encrypted = cipher.update(text);
     encrypted = Buffer.concat([encrypted, cipher.final()]);
     const authTag = cipher.getAuthTag();
@@ -23,7 +28,7 @@ function decrypt(text: string): string {
         const iv = Buffer.from(textParts.shift()!, 'hex');
         const encryptedText = Buffer.from(textParts.join(':').split(':')[0], 'hex');
         const authTag = Buffer.from(textParts.join(':').split(':')[1], 'hex');
-        const decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(ENCRYPTION_KEY), iv);
+        const decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(ENCRYPTION_KEY as string), iv);
         decipher.setAuthTag(authTag);
         let decrypted = decipher.update(encryptedText);
         decrypted = Buffer.concat([decrypted, decipher.final()]);
@@ -36,33 +41,24 @@ function decrypt(text: string): string {
 
 const encryptedKeys = ['OPENAI_API_KEY', 'HF_TOKEN'];
 
-// Tipos para as configurações esperadas
-export interface AppConfig {
-  OPENAI_API_KEY: string;
-  HF_TOKEN: string;
-  OPENAI_ASSISTANT_ID: string;
-  WHISPERX_MODEL: 'large-v3' | 'large-v2' | 'base' | 'small' | 'medium';
-  DIAR_DEVICE: 'cuda' | 'cpu';
-  ALIGN_DEVICE: 'cuda' | 'cpu';
-}
 
 // Função para buscar todas as configs e formatar como um objeto
-export const getAllConfigs = async (): Promise<Partial<AppConfig>> => {
+export const getAllConfigs = async (): Promise<Partial<IAppConfig>> => {
   const configs = await prisma.configuration.findMany();
-  const configObject: Partial<AppConfig> = {};
+  const configObject: Partial<IAppConfig> = {};
   
   for (const config of configs) {
     let value = config.value;
     if (encryptedKeys.includes(config.key) && value) {
       value = decrypt(value);
     }
-    configObject[config.key as keyof AppConfig] = value as any;
+    configObject[config.key as keyof IAppConfig] = value as any;
   }
   return configObject;
 };
 
 // Função para salvar múltiplas configurações
-export const updateAllConfigs = async (newConfigs: Partial<AppConfig>): Promise<void> => {
+export const updateAllConfigs = async (newConfigs: Partial<IAppConfig>): Promise<void> => {
   const transactions = Object.entries(newConfigs).map(([key, value]) => {
     let valueToStore = String(value);
     if (encryptedKeys.includes(key) && value) {

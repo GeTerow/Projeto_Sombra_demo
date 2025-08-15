@@ -1,9 +1,9 @@
 import axios from 'axios';
-import { AppConfig } from '../services/config.service';
+import { IAppConfig } from '../common/interfaces/IAppConfig';
 
 const WORKER_URL = process.env.PYTHON_WORKER_URL || 'http://localhost:8000';
 
-export const notifyWorkerToProcessTask = async (taskId: string, filePath: string, config: Partial<AppConfig>) => {
+export const notifyWorkerToProcessTask = async (taskId: string, filePath: string, config: Partial<IAppConfig>) => {
   try {
     const workerEndpoint = `${WORKER_URL}/process-task`;
     console.log(`[Node Backend] Notificando worker em ${workerEndpoint} para a tarefa ${taskId}`);

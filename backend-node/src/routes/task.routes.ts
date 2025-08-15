@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as taskController from '../controllers/task.controller';
-import { upload } from '../common/middlewares/upload.middleware';
+import { upload } from '../configs/multer';
 
 const router = Router();
 
