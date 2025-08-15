@@ -1,3 +1,5 @@
+// frontend-react/components/UploadProgressTracker.tsx
+
 import React, { useState, useEffect } from 'react';
 import { Task } from '../types';
 import { API_URL } from '../config';
@@ -36,7 +38,9 @@ export const UploadProgressTracker: React.FC = () => {
                         newTasks[existingTaskIndex] = updatedTask;
                         return newTasks;
                     } else {
-                        return [updatedTask, ...prevTasks];
+                        // Adiciona no topo e limita a lista para N itens se necessário
+                        const latestTasks = [updatedTask, ...prevTasks];
+                        return latestTasks.slice(0, 20); // Ex: Mantém apenas os últimos 20
                     }
                 });
             } catch (error) {
@@ -57,16 +61,13 @@ export const UploadProgressTracker: React.FC = () => {
 
     }, []);
 
-    // --- CORREÇÃO APLICADA AQUI ---
-    // Agora, em vez de retornar null, o componente tem seu próprio container
-    // e mostra uma mensagem se a lista de tarefas estiver vazia.
     return (
-        <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700/50">
+        <div className="bg-white/60 dark:bg-slate-800/50 backdrop-blur-sm p-8 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50 h-full">
             <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-4">
                 Progresso dos Envios
             </h3>
             {tasks.length > 0 ? (
-                <div className="max-h-60 overflow-y-auto pr-2">
+                <div className="max-h-[60vh] overflow-y-auto pr-2 -mr-4">
                     <ul className="space-y-3">
                         {tasks.map(task => (
                             <TaskProgressItem key={task.id} task={task} />
@@ -74,7 +75,7 @@ export const UploadProgressTracker: React.FC = () => {
                     </ul>
                 </div>
             ) : (
-                <div className="text-center py-8 px-4 bg-slate-50/50 dark:bg-slate-800/20 rounded-lg">
+                <div className="text-center py-8 px-4 bg-slate-50/50 dark:bg-slate-800/20 rounded-lg h-full flex flex-col justify-center">
                     <ListBulletIcon className="w-8 h-8 mx-auto text-slate-400" />
                     <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                         Os envios em andamento aparecerão aqui.
@@ -82,8 +83,8 @@ export const UploadProgressTracker: React.FC = () => {
                 </div>
             )}
             {!isConnected && tasks.length > 0 && (
-                <p className="text-xs text-center mt-2 text-amber-600 dark:text-amber-400">
-                    Conexão perdida. As atualizações em tempo real estão pausadas.
+                <p className="text-xs text-center mt-4 text-amber-600 dark:text-amber-400">
+                    Conexão perdida. As atualizações estão pausadas.
                 </p>
             )}
         </div>

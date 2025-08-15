@@ -335,7 +335,7 @@ def process_audio_task(task_id: str, audio_path: str) -> None:
             # --- ETAPA 3: DIARIZAÇÃO ---
             logger.info("Etapa 3: Diarizando...")
             notify_backend(webhook_url, {"status": "DIARIZING"})
-            diarize_segments = diarize_model(audio_path) # Removido try-except para ser mais estrito
+            diarize_segments = diarize_model(audio_path)
             
             logger.info("Etapa 4: Atribuindo locutores...")
             result_with_speakers = whisperx.assign_word_speakers(diarize_segments, result_aligned)

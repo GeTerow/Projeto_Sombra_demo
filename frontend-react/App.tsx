@@ -85,8 +85,13 @@ const App: React.FC = () => {
                 theme={theme}
                 onThemeToggle={handleThemeToggle}
             />
-            <main>
-                {renderContent()}
+            <main className="relative">
+                {/* FUNDO COM GRADIENTE APLICADO GLOBALMENTE */}
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-rose-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900" />
+                
+                <div className="relative">
+                    {renderContent()}
+                </div>
             </main>
             
             {isAddModalOpen && (
