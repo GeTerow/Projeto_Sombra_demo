@@ -1,6 +1,6 @@
 import PDFDocument from 'pdfkit';
 import { Task, Saleswoman } from '@prisma/client';
-import { TaskAnalysis } from '../utils/types';
+import { TaskAnalysis } from '../common/interfaces/types';
 
 // Tema de cores para o PDF.
 const THEME = {
