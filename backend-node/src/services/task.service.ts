@@ -2,6 +2,7 @@ import { Prisma, Task, Saleswoman } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { notifyWorkerToProcessTask } from '../lib/worker.client';
 import { sendSseEvent } from './sse.service';
+import { getAllConfigs } from './config.service';
 
 export const createTask = async (clientName: string, saleswomanId: string, filePath: string): Promise<Task> => {
   const newTask = await prisma.task.create({
@@ -17,7 +18,10 @@ export const createTask = async (clientName: string, saleswomanId: string, fileP
   sendSseEvent(newTask);
 
   try {
-    await notifyWorkerToProcessTask(newTask.id, filePath);
+    const config = await getAllConfigs();
+    
+    await notifyWorkerToProcessTask(newTask.id, filePath, config);
+
   } catch (error) {
     console.error(`[TaskService] Falha ao notificar worker, atualizando status da tarefa ${newTask.id} para FAILED.`);
     const failedTask = await prisma.task.update({

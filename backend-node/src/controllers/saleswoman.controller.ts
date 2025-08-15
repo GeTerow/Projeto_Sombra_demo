@@ -29,6 +29,35 @@ export const createNewSaleswoman = async (req: Request, res: Response) => {
   }
 };
 
+export const updateSaleswoman = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ error: 'O campo "name" é obrigatório.' });
+  }
+
+  try {
+    const updatedSaleswoman = await saleswomanService.updateSaleswoman(id, name);
+    res.status(200).json(updatedSaleswoman);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return res.status(409).json({ error: 'Uma vendedora com este nome já existe.' });
+    }
+    res.status(500).json({ error: 'Falha ao atualizar vendedora.' });
+  }
+};
+
+export const deleteSaleswoman = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    await saleswomanService.deleteSaleswoman(id);
+    res.status(204).send(); // 204 No Content para sucesso na exclusão
+  } catch (error) {
+    res.status(500).json({ error: 'Falha ao deletar vendedora.' });
+  }
+};
+
 // Gera o PDF
 export const generateSummaryPdf = async (req: Request, res: Response) => {
     const { id } = req.params;

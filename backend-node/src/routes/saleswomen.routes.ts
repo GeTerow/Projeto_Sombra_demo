@@ -9,6 +9,12 @@ router.get('/', saleswomanController.listSaleswomen);
 // Rota para criar uma nova vendedora.
 router.post('/', saleswomanController.createNewSaleswoman);
 
+// Rota para atualizar uma vendedora existente.
+router.put('/:id', saleswomanController.updateSaleswoman);
+
+// Rota para deletar uma vendedora.
+router.delete('/:id', saleswomanController.deleteSaleswoman);
+
 // Rota para gerar um novo resumo em PDF.
 router.post('/:id/generate-summary-pdf', saleswomanController.generateSummaryPdf);
 

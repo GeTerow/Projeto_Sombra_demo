@@ -9,44 +9,44 @@ datasource db {
 
 enum TaskStatus {
   PENDING
-  TRANSCRIBING // Adicionado
-  ALIGNING     // Adicionado
-  DIARIZING    // Adicionado
-  ANALYZING    // Adicionado
+  TRANSCRIBING
+  ALIGNING
+  DIARIZING
+  ANALYZING
   COMPLETED
   FAILED
-  // PROCESSING   // Removido (opcional, mas recomendado para clareza)
 }
 
-// NOVA TABELA PARA AS VENDEDORAS
 model Saleswoman {
-  id    String @id @default(uuid())
-  name  String @unique // O nome de cada vendedora deve ser único
-  tasks Task[] // Relação: Uma vendedora pode ter muitas tarefas
-
-  // NOVOS CAMPOS PARA O RESUMO EM PDF
-  summaryPdfPath            String?
-summaryLastGeneratedAt    DateTime?
-  summaryGenerationsToday   Int       @default(0)
+  id                      String     @id @default(uuid())
+  name                    String     @unique
+  tasks                   Task[]
+  summaryPdfPath          String?
+  summaryLastGeneratedAt  DateTime?
+  summaryGenerationsToday Int        @default(0)
   summaryLastGenerationDate DateTime?
-// Usado para resetar o contador diário
 
   @@map("saleswomen")
 }
 
 model Task {
-  id           String     @id @default(uuid())
-  clientName   String
-  status       TaskStatus @default(PENDING)
+  id            String     @id @default(uuid())
+  clientName    String
+  status        TaskStatus @default(PENDING)
   audioFilePath String
-  transcription String?   @db.Text
+  transcription String?    @db.Text
   analysis      Json?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  // RELAÇÃO COM A VENDEDORA
-  saleswomanId String
-  saleswoman   Saleswoman @relation(fields: [saleswomanId], references: [id], onDelete: Cascade)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  saleswomanId  String
+  saleswoman    Saleswoman @relation(fields: [saleswomanId], references: [id], onDelete: Cascade) // Adicionado onDelete: Cascade
 
   @@map("tasks")
+}
+
+model Configuration {
+  key   String @id
+  value String @db.Text
+
+  @@map("configurations")
 }

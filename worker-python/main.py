@@ -3,28 +3,25 @@ import os
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict, Any
 import openai
 from dotenv import load_dotenv
 
-# NOVO: Importações para o tratamento de erro e health check
 from celery_app import celery_app
 from celery.exceptions import CeleryError
 
-# Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
 
-# Importamos a tarefa do Celery.
 from tasks import process_audio_task
 
-# Carrega a chave da API a partir das variáveis de ambiente
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
-# --- Modelos de Dados Pydantic (sem mudanças) ---
+# --- Modelos de Dados Pydantic ---
 class ProcessTaskRequest(BaseModel):
     task_id: str
     file_path: str
+    config: Dict[str, Any] # Garante que a requisição tenha o campo config
 
 class GenerateSummaryRequest(BaseModel):
     name: str
@@ -36,48 +33,41 @@ app = FastAPI(title="API de Análise de Áudio", version="2.0.0")
 
 
 # --- Endpoints de Status e Saúde ---
-
 @app.get("/health")
 def health_check():
-    """Verificação básica de que a API está no ar."""
     return {"status": "ok", "message": "API está pronta para receber tarefas."}
 
-# NOVO: Endpoint para verificar a conexão com o Redis.
 @app.get("/health-redis")
 def health_redis_check():
-    """Verifica se a API consegue se conectar ao broker do Celery (Redis)."""
     try:
-        # Tenta obter o status do broker. É um comando leve e eficaz para testar a conexão.
         stats = celery_app.control.inspect().stats()
         if not stats:
             raise CeleryError("Não foi possível obter estatísticas do broker. O worker está rodando e acessível?")
         return {"status": "ok", "message": "Conexão com o broker do Celery (Redis) está funcionando."}
     except Exception as e:
-        # Captura qualquer exceção de conexão e a retorna de forma clara.
         raise HTTPException(
             status_code=503, 
-            detail=f"Não foi possível conectar ao broker do Celery (Redis). Verifique o endereço do broker e as configurações de firewall. Erro: {str(e)}"
+            detail=f"Não foi possível conectar ao broker do Celery (Redis). Erro: {str(e)}"
         )
 
 
 # --- Endpoints Principais ---
-
 @app.post("/process-task", status_code=202)
 def process_task_endpoint(request: ProcessTaskRequest):
     """
-    Endpoint que recebe a tarefa e a envia para a fila do Celery.
-    Responde imediatamente.
+    Recebe a tarefa, incluindo sua configuração, e a envia para a fila do Celery.
     """
     if not os.path.exists(request.file_path):
         raise HTTPException(status_code=404, detail=f"Arquivo de áudio não encontrado em: {request.file_path}")
 
-    # CORRIGIDO: Bloco try...except para capturar falhas ao enfileirar a tarefa.
     try:
         print(f"[API FastAPI] Tarefa recebida: {request.task_id}. Enviando para a fila do Celery.")
-        process_audio_task.delay(request.task_id, request.file_path)
+        # --- LINHA CRÍTICA CORRIGIDA ---
+        # Agora estamos passando os 3 argumentos que a tarefa espera: task_id, file_path, e config
+        process_audio_task.delay(request.task_id, request.file_path, request.config)
+        
         return {"message": "Tarefa de processamento de áudio aceita e enfileirada para execução."}
     except Exception as e:
-        # Retorna um erro 500 claro se não conseguir contatar o Redis.
         error_detail = f"Falha ao enfileirar a tarefa no Celery. A API não conseguiu se conectar ao Redis. Erro: {str(e)}"
         print(f"[API FastAPI] ERRO CRÍTICO: {error_detail}")
         raise HTTPException(status_code=500, detail=error_detail)
@@ -85,14 +75,13 @@ def process_task_endpoint(request: ProcessTaskRequest):
 
 @app.post("/generate-summary")
 def generate_summary(request: GenerateSummaryRequest):
-    """
-    Recebe as últimas análises de uma vendedora e gera um resumo consolidado.
-    """
+    # ... (o resto do arquivo permanece o mesmo)
     if not openai.api_key:
         raise HTTPException(status_code=500, detail="A chave da API da OpenAI não foi configurada no servidor.")
-
+    
     print(f"-> Gerando resumo para {request.name} com base em {len(request.transcriptions)} transcricoes.")
     
+    # ... (lógica do prompt)
     previous_transcriptions_text = "\n\n---\n[FIM DA TRANSCRICAO]\n---\n\n".join(
         [f"Transcricao {i+1}:\n{transcription}" for i, transcription in enumerate(request.transcriptions)]
     )
@@ -126,10 +115,10 @@ def generate_summary(request: GenerateSummaryRequest):
     ---
     {previous_transcriptions_text}
     """
-
+    
     try:
         response = openai.chat.completions.create(
-            model="gpt-5-nano-2025-08-07", 
+            model="gpt-5-nano-2025-08-07",
             messages=[
                 {"role": "system", "content": "Você é um gerente de vendas sênior elaborando um feedback de desempenho."},
                 {"role": "user", "content": prompt}

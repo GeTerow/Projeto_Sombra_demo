@@ -21,6 +21,23 @@ export const createSaleswoman = async (name: string) => {
   });
 };
 
+export const updateSaleswoman = async (id: string, name: string) => {
+    return prisma.saleswoman.update({
+        where: { id },
+        data: { name },
+    });
+};
+
+export const deleteSaleswoman = async (id: string) => {
+    const saleswoman = await prisma.saleswoman.findUnique({ where: { id } });
+    if (saleswoman?.summaryPdfPath && fs.existsSync(saleswoman.summaryPdfPath)) {
+        fs.unlinkSync(saleswoman.summaryPdfPath);
+    }
+    return prisma.saleswoman.delete({
+        where: { id },
+    });
+};
+
 // Gera um novo PDF de resumo
 export const generateNewSummary = async (id: string, force: boolean = false) => {
     let saleswoman = await prisma.saleswoman.findUnique({ where: { id } });
