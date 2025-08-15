@@ -1,65 +1,18 @@
 // frontend-react/components/UploadProgressTracker.tsx
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Task } from '../types';
-import { API_URL } from '../config';
 import { TaskProgressItem } from './TaskProgressItem';
 
 // Ícone para o estado vazio
 const ListBulletIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" /></svg>;
 
-export const UploadProgressTracker: React.FC = () => {
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [isConnected, setIsConnected] = useState<boolean>(false);
+interface UploadProgressTrackerProps {
+    tasks: Task[];
+    isConnected: boolean;
+}
 
-    useEffect(() => {
-        const eventSource = new EventSource(`${API_URL}/tasks/stream`);
-
-        eventSource.onopen = () => {
-            console.log("SSE Connection opened!");
-            setIsConnected(true);
-        };
-
-        eventSource.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-
-                if (data.message) {
-                    console.log("SSE Status:", data.message);
-                    return; 
-                }
-
-                const updatedTask = data as Task;
-
-                setTasks(prevTasks => {
-                    const existingTaskIndex = prevTasks.findIndex(t => t.id === updatedTask.id);
-                    if (existingTaskIndex !== -1) {
-                        const newTasks = [...prevTasks];
-                        newTasks[existingTaskIndex] = updatedTask;
-                        return newTasks;
-                    } else {
-                        // Adiciona no topo e limita a lista para N itens se necessário
-                        const latestTasks = [updatedTask, ...prevTasks];
-                        return latestTasks.slice(0, 20); // Ex: Mantém apenas os últimos 20
-                    }
-                });
-            } catch (error) {
-                console.error("Failed to parse SSE event data:", error);
-            }
-        };
-
-        eventSource.onerror = (err) => {
-            console.error("EventSource failed:", err);
-            setIsConnected(false);
-            eventSource.close();
-        };
-        
-        return () => {
-            console.log("Closing SSE connection.");
-            eventSource.close();
-        };
-
-    }, []);
+export const UploadProgressTracker: React.FC<UploadProgressTrackerProps> = ({ tasks, isConnected }) => {
 
     return (
         <div className="bg-white/60 dark:bg-slate-800/50 backdrop-blur-sm p-8 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50 h-full">

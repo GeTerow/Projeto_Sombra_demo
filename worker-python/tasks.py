@@ -139,10 +139,10 @@ def get_align_model(language_code: str, device: str = ALIGN_DEVICE) -> Tuple[Any
 # -----------------------------------------------------------------------------
 # Utilitários gerais
 # -----------------------------------------------------------------------------
+
 def notify_backend(webhook_url: str, payload: Dict[str, Any], timeout: int = 20) -> None:
     """Função modificada para aceitar qualquer payload e notificar o backend."""
     try:
-        # Usaremos o método PATCH, que é ideal para atualizações parciais.
         resp = requests.patch(webhook_url, json=payload, timeout=timeout)
         if resp.status_code >= 400:
             logger.error(f"Webhook para {webhook_url} retornou status {resp.status_code}: {resp.text}")

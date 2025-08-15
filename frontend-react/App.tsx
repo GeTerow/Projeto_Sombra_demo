@@ -6,6 +6,10 @@ import { AudioUploadForm } from './components/AudioUploadForm';
 import { SaleswomenDashboard } from './components/SaleswomenDashboard';
 import { AnalysisDetailPage } from './components/AnalysisDetailPage';
 import { AddSaleswomanModal } from './components/AddSaleswomanModal';
+import { UploadProgressTracker } from './components/UploadProgressTracker';
+import type { Task } from './types';
+import { API_URL } from './config';
+
 
 export type View =
     | { name: 'upload' }
@@ -30,6 +34,60 @@ const App: React.FC = () => {
         }
         return 'dark';
     });
+
+    // Estado para o UploadProgressTracker (estado elevado)
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [isConnected, setIsConnected] = useState<boolean>(false);
+
+    // Efeito para o SSE (movido de UploadProgressTracker para App)
+    useEffect(() => {
+        const eventSource = new EventSource(`${API_URL}/tasks/stream`);
+
+        eventSource.onopen = () => {
+            console.log("SSE Connection opened in App!");
+            setIsConnected(true);
+        };
+
+        eventSource.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+
+                if (data.message) {
+                    console.log("SSE Status:", data.message);
+                    return;
+                }
+
+                const updatedTask = data as Task;
+
+                setTasks(prevTasks => {
+                    const existingTaskIndex = prevTasks.findIndex(t => t.id === updatedTask.id);
+                    if (existingTaskIndex !== -1) {
+                        const newTasks = [...prevTasks];
+                        newTasks[existingTaskIndex] = updatedTask;
+                        return newTasks;
+                    } else {
+                        const latestTasks = [updatedTask, ...prevTasks];
+                        return latestTasks.slice(0, 20); // Mantém apenas os últimos 20
+                    }
+                });
+            } catch (error) {
+                console.error("Failed to parse SSE event data:", error);
+            }
+        };
+
+        eventSource.onerror = (err) => {
+            console.error("EventSource failed:", err);
+            setIsConnected(false);
+            eventSource.close();
+        };
+        
+        return () => {
+            console.log("Closing SSE connection.");
+            eventSource.close();
+        };
+
+    }, []);
+
 
     useEffect(() => {
         const root = window.document.documentElement;
@@ -58,7 +116,18 @@ const App: React.FC = () => {
     const renderContent = () => {
         switch (currentView.name) {
             case 'upload':
-                return <AudioUploadForm key={`form-${version}`} />;
+                return (
+                    <div className="max-w-7xl mx-auto p-4 md:p-8 min-h-[calc(100vh-80px)]">
+                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                            <div className="lg:col-span-3">
+                                <AudioUploadForm key={`form-${version}`} />
+                            </div>
+                            <div className="lg:col-span-2">
+                                <UploadProgressTracker tasks={tasks} isConnected={isConnected} />
+                            </div>
+                        </div>
+                    </div>
+                );
             case 'dashboard':
                 return <SaleswomenDashboard
                             key={`dashboard-${version}`}
@@ -66,14 +135,16 @@ const App: React.FC = () => {
                             onAddSaleswoman={() => setIsAddModalOpen(true)}
                         />;
             case 'analysis':
-                // CORREÇÃO APLICADA AQUI:
-                // As props 'callId' e 'onBack' estão sendo passadas corretamente.
                 return <AnalysisDetailPage
                             callId={currentView.callId}
                             onBack={() => navigateTo('dashboard')}
                         />;
             default:
-                return <AudioUploadForm />;
+                return <SaleswomenDashboard
+                            key={`dashboard-default-${version}`}
+                            onSelectCall={navigateToAnalysis}
+                            onAddSaleswoman={() => setIsAddModalOpen(true)}
+                        />;
         }
     };
 

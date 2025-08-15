@@ -4,12 +4,12 @@
   "description": "Backend principal para orquestração de análise de áudio.",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "ts-node-dev src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio",
-    "db:seed": "npx prisma db seed"
+  "dev": "ts-node-dev src/server.ts",
+  "build": "tsc",
+  "start": "node dist/server.js",
+  "db:migrate": "prisma migrate dev",
+  "db:studio": "prisma studio",
+  "db:seed": "npx prisma db seed"
   },
   "keywords": [],
   "author": "",
