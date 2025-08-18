@@ -1,0 +1,81 @@
+services:
+  # Serviço do Frontend (React com Vite Dev Server)
+  frontend:
+    build:
+      context: ./frontend-react
+      dockerfile: Dockerfile
+    container_name: sombra-frontend
+    ports:
+      - "5173:5173"
+    networks:
+      - sombra-net
+
+  # Serviço do Backend (Node.js)
+  backend:
+    build:
+      context: ./backend-node
+      dockerfile: Dockerfile
+    container_name: sombra-backend
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: "postgresql://sombra_user:sombra_pass@db:5432/sombra_db?schema=public"
+      PYTHON_WORKER_URL: "http://worker:8000"
+      PORT: 3001
+      ENCRYPTION_KEY: "b6f8504bb5ca0ba601acb682f207f804"
+    volumes:
+      # Mapeamento existente para o backend
+      - ./backend-node/uploads:/app/uploads
+    depends_on:
+      - db
+      - redis
+    networks:
+      - sombra-net
+
+  # Serviço do Worker (Python/Celery)
+  worker:
+    build:
+      context: ./worker-python
+      dockerfile: Dockerfile
+    container_name: sombra-worker
+    environment:
+      REDIS_URL: "redis://redis:6379/0"
+      NODE_BACKEND_URL: "http://backend:3001"
+    volumes:
+      - ./backend-node/uploads:/app/uploads
+    depends_on:
+      - redis
+    networks:
+      - sombra-net
+
+  # Serviço do Banco de Dados (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    container_name: sombra-db
+    environment:
+      POSTGRES_DB: sombra_db
+      POSTGRES_USER: sombra_user
+      POSTGRES_PASSWORD: sombra_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sombra-net
+
+  # Serviço do Redis (Broker para o Celery)
+  redis:
+    image: redis:7-alpine
+    container_name: sombra-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - sombra-net
+
+# Definição dos volumes e redes
+volumes:
+  postgres_data:
+
+networks:
+  sombra-net:
+    driver: bridge

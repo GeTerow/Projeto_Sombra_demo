@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { fileFilter } from "../common/middlewares/upload.middleware"
 
 // Define o diretório onde os uploads serão guardados
-const UPLOAD_DIR = path.resolve(__dirname, '..', '..', '..', 'uploads');
+const UPLOAD_DIR = path.resolve(__dirname, '..', '..', 'uploads');
 
 // Garante que o diretório de uploads exista, se não, cria-o
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
