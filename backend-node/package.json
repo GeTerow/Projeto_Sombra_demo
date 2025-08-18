@@ -4,12 +4,12 @@
   "description": "Backend principal para orquestração de análise de áudio.",
   "main": "dist/index.js",
   "scripts": {
-  "dev": "ts-node-dev src/server.ts",
-  "build": "tsc",
-  "start": "node dist/server.js",
-  "db:migrate": "prisma migrate dev",
-  "db:studio": "prisma studio",
-  "db:seed": "npx prisma db seed"
+    "dev": "ts-node-dev src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "db:seed": "npx prisma db seed"
   },
   "keywords": [],
   "author": "",
@@ -17,17 +17,21 @@
   "dependencies": {
     "@prisma/client": "^5.14.0",
     "axios": "^1.7.2",
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "pdfkit": "^0.17.1"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^1.4.11",
-    "@types/node": "^20.19.9",
+    "@types/node": "^20.19.11",
     "@types/pdfkit": "^0.17.2",
     "prisma": "^5.14.0",
     "ts-node": "^10.9.2",
@@ -36,6 +40,6 @@
     "typescript": "^5.4.5"
   },
   "prisma": {
-  "seed": "tsx prisma/seed.ts"
-}
+    "seed": "node dist/prisma/seed.js"
+  }
 }
