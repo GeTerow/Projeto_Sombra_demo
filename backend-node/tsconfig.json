@@ -1,15 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES2022",                          // Compila para uma versão moderna do JavaScript
-    "module": "CommonJS",                         // Usa o sistema de módulos padrão do Node.js, mais robusto para servidores Express
-    "moduleResolution": "node",                   // Como o Node.js resolve os módulos (procurando em node_modules, etc.)
-    "outDir": "./dist",                           // Onde os arquivos JavaScript compilados serão salvos                           // Onde estão nossos arquivos-fonte TypeScript
-    "esModuleInterop": true,                      // Permite compatibilidade entre CommonJS e ES Modules
-    "forceConsistentCasingInFileNames": true,     // Garante que os nomes dos arquivos sejam consistentes (case-sensitive)
-    "strict": true,                               // Habilita todas as checagens de tipo estritas
-    "skipLibCheck": true,                         // Pula a verificação de tipos dos arquivos de declaração (.d.ts)
-    "sourceMap": true                             // Gera source maps para facilitar o debug
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "rootDir": ".",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "sourceMap": true
   },
-  "include": ["src/**/*", "prisma/**/*.ts"],      // Quais arquivos o TypeScript deve compilar
-  "exclude": ["node_modules"]                   // Quais pastas ignorar
+  "include": ["src/**/*.ts", "prisma/**/*.ts"],
+  "exclude": ["node_modules"]
 }

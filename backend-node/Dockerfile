@@ -1,5 +1,3 @@
-# backend-node/Dockerfile (Versão final e correta)
-
 # Estágio 1: Instalar dependências
 FROM node:20-slim AS deps
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
@@ -12,10 +10,12 @@ FROM node:20-slim AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-COPY prisma ./prisma/
-# Este comando agora lerá o schema.prisma atualizado e gerará os binários corretos
+# O comando abaixo agora lerá o schema.prisma copiado e gerará os binários corretos
 RUN npx prisma generate
 RUN npm run build
+
+# (Opcional) Adicione esta linha para depurar e ver o que está na pasta dist
+# RUN ls -la dist
 
 # Estágio 3: Produção - Imagem final
 FROM node:20-slim
@@ -30,4 +30,4 @@ COPY --from=builder /app/prisma ./prisma
 EXPOSE 3001
 
 # Comando para iniciar a aplicação
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/server.js"]

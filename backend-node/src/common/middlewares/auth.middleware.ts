@@ -11,8 +11,16 @@ export const authenticateToken = (req: IAuthRequest, res: Response, next: NextFu
     return res.status(500).json({ error: 'Erro de configuração interna do servidor.' });
   }
 
+  let token: string | null = null;
+  
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  if (authHeader) {
+    token = authHeader.split(' ')[1];
+  }
+
+  if (!token && req.query && req.query.token) {
+    token = req.query.token as string;
+  }
 
   if (!token) {
     return res.status(401).json({ error: 'Acesso negado. Nenhum token fornecido.' });
