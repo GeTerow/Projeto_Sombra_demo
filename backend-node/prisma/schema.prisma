@@ -59,7 +59,8 @@ model Task {
   updatedAt     DateTime   @updatedAt
   saleswomanId  String
   saleswoman    Saleswoman @relation(fields: [saleswomanId], references: [id], onDelete: Cascade) // Adicionado onDelete: Cascade
-
+  includedInSummary Boolean @default(false)
+  
   @@map("tasks")
 }
 

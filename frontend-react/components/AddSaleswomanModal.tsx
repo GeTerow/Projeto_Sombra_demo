@@ -10,6 +10,7 @@ interface Props {
 
 export const AddSaleswomanModal: React.FC<Props> = ({ onClose, onSaleswomanAdded }) => {
     const [name, setName] = useState('');
+    const [email, setEmail] = useState(''); // Estado para o e-mail
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -22,7 +23,8 @@ export const AddSaleswomanModal: React.FC<Props> = ({ onClose, onSaleswomanAdded
         setIsLoading(true);
         setError('');
         try {
-            const response = await api.post<Saleswoman>('/saleswomen', { name });
+            // Envia 'name' e 'email' para a API
+            const response = await api.post<Saleswoman>('/saleswomen', { name, email });
             onSaleswomanAdded(response.data); 
             onClose(); 
         } catch (err: any) {
@@ -42,21 +44,41 @@ export const AddSaleswomanModal: React.FC<Props> = ({ onClose, onSaleswomanAdded
                 onClick={(e) => e.stopPropagation()} 
             >
                 <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-white">Adicionar Nova Vendedora</h2>
-                <form onSubmit={handleSubmit}>
-                    <label htmlFor="saleswoman-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                        Nome da Vendedora
-                    </label>
-                    <input
-                        id="saleswoman-name"
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Ex: Beatriz Costa"
-                        className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700/80 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-                        autoFocus
-                    />
-                    {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-                    <div className="flex justify-end gap-4 mt-8">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Campo Nome */}
+                    <div>
+                        <label htmlFor="saleswoman-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Nome da Vendedora
+                        </label>
+                        <input
+                            id="saleswoman-name"
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="Ex: Beatriz Costa"
+                            className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700/80 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                            required
+                            autoFocus
+                        />
+                    </div>
+                    {/* Novo Campo E-mail */}
+                    <div>
+                        <label htmlFor="saleswoman-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            E-mail (opcional)
+                        </label>
+                        <input
+                            id="saleswoman-email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Ex: beatriz.costa@email.com"
+                            className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700/80 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                        />
+                    </div>
+
+                    {error && <p className="text-red-500 text-sm pt-2">{error}</p>}
+
+                    <div className="flex justify-end gap-4 pt-4">
                         <button type="button" onClick={onClose} className="px-5 py-2 rounded-md text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 transition-colors">
                             Cancelar
                         </button>

@@ -1,6 +1,5 @@
 export type TaskStatus = 'PENDING' | 'TRANSCRIBING' | 'ALIGNING' | 'DIARIZING' | 'ANALYZING' | 'COMPLETED' | 'FAILED';
 
-// --- NOVA ESTRUTURA DA ANÁLISE ---
 
 // Sub-tipo para cada estágio da performance
 export interface StageAnalysis {
@@ -39,15 +38,13 @@ export interface Analysis {
   improvementPoints: ImprovementPoint[];
 }
 
-// --- FIM DA NOVA ESTRUTURA ---
-
-
 export interface Saleswoman {
   id: string;
   name: string;
+  email?: string | null;
   summaryPdfPath?: string | null;
   summaryLastGeneratedAt?: string | null;
-  summaryGenerationsToday?: number;
+  summaryGenerationsToday?: number | string;
   summaryLastGenerationDate?: string | null;
 }
 
@@ -59,7 +56,7 @@ export interface Task {
   status: TaskStatus;
   audioFilePath: string;
   transcription: string | null;
-  analysis: Analysis | null; // Agora usará a nova estrutura de Análise
+  analysis: Analysis | null;
   createdAt: string;
   updatedAt: string;
 }

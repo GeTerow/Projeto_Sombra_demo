@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import * as configService from '../services/config.service';
+import * as emailService from '../services/email.service';
+import { startOrRestartScheduler } from '../scheduler';
 
 export const getConfigurations = async (req: Request, res: Response) => {
   try {
@@ -20,7 +22,6 @@ export const updateConfigurations = async (req: Request, res: Response) => {
     const currentConfig = await configService.getAllConfigs();
     const newConfig = req.body;
 
-    // Se as chaves sensíveis não forem alteradas, mantenha os valores antigos.
     if (newConfig.OPENAI_API_KEY === "********") {
       newConfig.OPENAI_API_KEY = currentConfig.OPENAI_API_KEY;
     }
@@ -29,8 +30,28 @@ export const updateConfigurations = async (req: Request, res: Response) => {
     }
     
     await configService.updateAllConfigs(newConfig);
+
+    await startOrRestartScheduler(); 
+    
     res.status(200).json({ message: 'Configurações atualizadas com sucesso.' });
   } catch (error) {
     res.status(500).json({ error: 'Falha ao atualizar configurações.' });
+  }
+};
+
+export const sendTestEmail = async (req: Request, res: Response) => {
+  const { testEmail } = req.body;
+
+  if (!testEmail) {
+    return res.status(400).json({ error: 'O campo "testEmail" é obrigatório.' });
+  }
+
+  try {
+    // Note: O sendTestEmail usará as configurações já salvas no banco de dados
+    await emailService.sendTestEmail(testEmail);
+    res.status(200).json({ message: `E-mail de teste enviado com sucesso para ${testEmail}.` });
+  } catch (error: any) {
+    console.error('[ConfigController] Falha ao enviar e-mail de teste:', error);
+    res.status(500).json({ error: 'Falha ao enviar e-mail de teste. Verifique as configurações de SMTP e os logs do servidor.' });
   }
 };

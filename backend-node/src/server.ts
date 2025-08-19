@@ -1,4 +1,5 @@
 import { app } from './app';
+import { startOrRestartScheduler } from './scheduler';
 
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
@@ -7,6 +8,8 @@ const startServer = () => {
         app.listen(PORT, '0.0.0.0', () => {
             console.log(`Backend Principal (Node.js) rodando na porta ${PORT}`);
             console.log(`Acesse http://localhost:${PORT}`);
+            
+            startOrRestartScheduler();
         });
     } catch (error) {
         console.error("Não foi possível iniciar o servidor:", error);

@@ -58,7 +58,6 @@ export const updateSaleswoman = async (req: Request, res: Response) => {
   }
 };
 
-// Nenhuma alteração daqui para baixo
 export const deleteSaleswoman = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
@@ -74,7 +73,7 @@ export const generateSummaryPdf = async (req: Request, res: Response) => {
     const { force } = req.body;
 
     try {
-        const updatedSaleswoman = await saleswomanService.generateNewSummary(id, force);
+        const updatedSaleswoman = await saleswomanService.generateOnDemandSummary(id, force);
         res.status(201).json(updatedSaleswoman);
     } catch (error: any) {
         if (error.statusCode) {
