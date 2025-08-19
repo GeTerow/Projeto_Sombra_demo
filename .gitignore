@@ -1,1 +1,10 @@
+# Arquivos de Sistema Operacional
+.DS_Store
+Thumbs.db
+
+# Arquivos de configuração de IDEs e Editores
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
 .env

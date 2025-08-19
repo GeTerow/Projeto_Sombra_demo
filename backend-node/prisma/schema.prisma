@@ -38,6 +38,7 @@ enum TaskStatus {
 model Saleswoman {
   id                      String     @id @default(uuid())
   name                    String     @unique
+  email                   String?
   tasks                   Task[]
   summaryPdfPath          String?
   summaryLastGeneratedAt  DateTime?

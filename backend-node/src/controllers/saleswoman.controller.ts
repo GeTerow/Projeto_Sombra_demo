@@ -12,16 +12,19 @@ export const listSaleswomen = async (req: Request, res: Response) => {
 };
 
 export const createNewSaleswoman = async (req: Request, res: Response) => {
-  const { name } = req.body;
+  const { name, email } = req.body;
 
   if (!name) {
     return res.status(400).json({ error: 'O campo "name" é obrigatório.' });
   }
 
   try {
-    const newSaleswoman = await saleswomanService.createSaleswoman(name);
+    const newSaleswoman = await saleswomanService.createSaleswoman(name, email);
     res.status(201).json(newSaleswoman);
   } catch (error) {
+    if (error instanceof Error && error.message.includes('E-mail já está em uso')) {
+      return res.status(409).json({ error: error.message });
+    }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return res.status(409).json({ error: 'Uma vendedora com este nome já existe.' });
     }
@@ -31,16 +34,23 @@ export const createNewSaleswoman = async (req: Request, res: Response) => {
 
 export const updateSaleswoman = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name } = req.body;
+  const { name, email } = req.body;
 
-  if (!name) {
-    return res.status(400).json({ error: 'O campo "name" é obrigatório.' });
+  const updateData: { name?: string; email?: string } = {};
+  if (name) updateData.name = name;
+  if (email !== undefined) updateData.email = email;
+
+  if (Object.keys(updateData).length === 0) {
+    return res.status(400).json({ error: 'Nenhum dado para atualizar foi fornecido.' });
   }
 
   try {
-    const updatedSaleswoman = await saleswomanService.updateSaleswoman(id, name);
+    const updatedSaleswoman = await saleswomanService.updateSaleswoman(id, updateData);
     res.status(200).json(updatedSaleswoman);
   } catch (error) {
+    if (error instanceof Error && error.message.includes('E-mail já está em uso')) {
+      return res.status(409).json({ error: error.message });
+    }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return res.status(409).json({ error: 'Uma vendedora com este nome já existe.' });
     }
@@ -48,17 +58,17 @@ export const updateSaleswoman = async (req: Request, res: Response) => {
   }
 };
 
+// Nenhuma alteração daqui para baixo
 export const deleteSaleswoman = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     await saleswomanService.deleteSaleswoman(id);
-    res.status(204).send(); // 204 No Content para sucesso na exclusão
+    res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: 'Falha ao deletar vendedora.' });
   }
 };
 
-// Gera o PDF
 export const generateSummaryPdf = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { force } = req.body;
@@ -71,7 +81,7 @@ export const generateSummaryPdf = async (req: Request, res: Response) => {
             const payload: any = { error: error.message };
             if (error.confirmationRequired) {
                 payload.confirmationRequired = true;
-                payload.message = error.message; // O front-end usa 'message' para confirmação
+                payload.message = error.message;
             }
             return res.status(error.statusCode).json(payload);
         }
@@ -79,7 +89,6 @@ export const generateSummaryPdf = async (req: Request, res: Response) => {
     }
 };
 
-// Baixar o PDF
 export const downloadSummaryPdf = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
