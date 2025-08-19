@@ -23,10 +23,7 @@ type ConfigFormData = {
   SMTP_PASS: string;
   SMTP_FROM: string;
   EMAIL_SCHEDULE: string;
-   SUMMARY_TRIGGER_COUNT: string;
-    SUMMARY_WEEKLY_ENABLED: string;
-    SUMMARY_WEEKLY_DAY: string;
-    SUMMARY_WEEKLY_TASK_COUNT: string;
+  SUMMARY_TRIGGER_COUNT: string;
 };
 
 // Tipos/constantes para o agendamento
@@ -347,147 +344,169 @@ export const SettingsPage: React.FC = () => {
         {/* --- Agendamento de E-mails (UI intuitiva) --- */}
         <div className="bg-white/60 dark:bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50">
           <h2 className="text-xl font-bold flex items-center gap-3">
-            <ClockIcon className="w-6 h-6 text-teal-500" /> Agendamento de E-mails
+            <ClockIcon className="w-6 h-6 text-teal-500" /> Agendamento de Resumos
           </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-6">
-            Defina quando os resumos automáticos serão enviados. O cron é gerado automaticamente a partir das opções abaixo.
+            Defina quando e como os resumos automáticos serão enviados.
           </p>
 
-          {/* Presets rápidos */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            <span className="text-xs text-slate-500 self-center">Sugestões:</span>
-            <button type="button" onClick={() => applyPreset('wk_08')} className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600">
-              08:00 Seg–Sex
-            </button>
-            <button type="button" onClick={() => applyPreset('daily_09')} className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600">
-              09:00 Todos os dias
-            </button>
-            <button type="button" onClick={() => applyPreset('mwf_18')} className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600">
-              Seg, Qua, Sex às 18:00
-            </button>
-            <button type="button" onClick={() => applyPreset('m1_08')} className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600">
-              Dia 1 às 08:00
-            </button>
+          {/* Gatilho por Volume */}
+          <div className="mb-6">
+            <label htmlFor="SUMMARY_TRIGGER_COUNT" className="block text-sm font-medium mb-1">Gatilho por Volume de Tarefas</label>
+            <input
+              type="number"
+              id="SUMMARY_TRIGGER_COUNT"
+              name="SUMMARY_TRIGGER_COUNT"
+              value={config.SUMMARY_TRIGGER_COUNT || ''}
+              onChange={handleChange}
+              min={1}
+              placeholder="Ex: 5"
+              className="w-full md:w-1/2 px-4 py-2 bg-slate-50 dark:bg-slate-700/80 border border-slate-300 dark:border-slate-600 rounded-md"
+            />
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Quando o agendador rodar, um resumo será gerado se a vendedora tiver atingido este número de novas análises desde o último resumo.
+            </p>
           </div>
 
-          {/* Modo/Frequência */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Frequência</label>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { key: 'weekdays', label: 'Seg–Sex' },
-                { key: 'daily', label: 'Todos os dias' },
-                { key: 'weekly', label: 'Semanal (escolher dias)' },
-                { key: 'monthly', label: 'Mensal (dia do mês)' },
-                { key: 'custom', label: 'Avançado (Cron)' },
-              ].map((opt) => (
-                <button
-                  key={opt.key}
-                  type="button"
-                  onClick={() => setScheduleMode(opt.key as ScheduleMode)}
-                  className={`px-3 py-2 rounded-md text-sm border transition ${
-                    scheduleMode === opt.key
-                      ? 'bg-teal-600 text-white border-teal-600'
-                      : 'bg-slate-50 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+          <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+            <h3 className="text-lg font-semibold mb-4">Agendamento por Tempo</h3>
+            {/* Presets rápidos */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <span className="text-xs text-slate-500 self-center">Sugestões:</span>
+              <button type="button" onClick={() => applyPreset('wk_08')} className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600">
+                08:00 Seg–Sex
+              </button>
+              <button type="button" onClick={() => applyPreset('daily_09')} className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600">
+                09:00 Todos os dias
+              </button>
+              <button type="button" onClick={() => applyPreset('mwf_18')} className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600">
+                Seg, Qua, Sex às 18:00
+              </button>
+              <button type="button" onClick={() => applyPreset('m1_08')} className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600">
+                Dia 1 às 08:00
+              </button>
             </div>
-          </div>
 
-          {/* Horário - exceto no modo custom */}
-          {scheduleMode !== 'custom' && (
+            {/* Modo/Frequência */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Horário</label>
-              <input
-                type="time"
-                step={60}
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="w-40 px-3 py-2 bg-slate-50 dark:bg-slate-700/80 border border-slate-300 dark:border-slate-600 rounded-md"
-              />
-            </div>
-          )}
-
-          {/* Dias da semana (modo semanal) */}
-          {scheduleMode === 'weekly' && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Dias da semana</label>
+              <label className="block text-sm font-medium mb-2">Frequência</label>
               <div className="flex flex-wrap gap-2">
-                {DAY_LABELS.map((d, idx) => {
-                  const active = weeklyDays.includes(idx);
-                  return (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => toggleWeeklyDay(idx)}
-                      className={`px-3 py-1 rounded-full text-sm border ${
-                        active
-                          ? 'bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-900/30 dark:text-teal-200 dark:border-teal-700'
-                          : 'bg-slate-50 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600'
-                      }`}
-                    >
-                      {d}
-                    </button>
-                  );
-                })}
+                {[
+                  { key: 'weekdays', label: 'Seg–Sex' },
+                  { key: 'daily', label: 'Todos os dias' },
+                  { key: 'weekly', label: 'Semanal (escolher dias)' },
+                  { key: 'monthly', label: 'Mensal (dia do mês)' },
+                  { key: 'custom', label: 'Avançado (Cron)' },
+                ].map((opt) => (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => setScheduleMode(opt.key as ScheduleMode)}
+                    className={`px-3 py-2 rounded-md text-sm border transition ${
+                      scheduleMode === opt.key
+                        ? 'bg-teal-600 text-white border-teal-600'
+                        : 'bg-slate-50 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </div>
-          )}
 
-          {/* Dia do mês (modo mensal) */}
-          {scheduleMode === 'monthly' && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Dia do mês</label>
-              <input
-                type="number"
-                min={1}
-                max={31}
-                value={monthlyDay}
-                onChange={(e) => setMonthlyDay(Number(e.target.value))}
-                className="w-28 px-3 py-2 bg-slate-50 dark:bg-slate-700/80 border border-slate-300 dark:border-slate-600 rounded-md"
-              />
-            </div>
-          )}
-
-          {/* Modo Avançado (Cron) */}
-          {scheduleMode === 'custom' && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Padrão de Agendamento (Formato Cron)</label>
-              <input
-                type="text"
-                value={customCron}
-                onChange={(e) => setCustomCron(e.target.value)}
-                placeholder="Ex.: 0 8 * * 1-5"
-                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700/80 border border-slate-300 dark:border-slate-600 rounded-md"
-              />
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Formato: Minuto Hora DiaMês Mês DiaSemana. Exemplos: "0 8 * * 1-5" (8h Seg–Sex), "30 9 * * *" (9:30 todos os dias).
-              </p>
-            </div>
-          )}
-
-          {/* Preview do cron e resumo humano */}
-          <div className="mt-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600">
-            <div className="text-sm">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-slate-500 dark:text-slate-400">Cron gerado:</span>
-                <code className="px-2 py-1 rounded bg-white/70 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-600">
-                  {buildCronFromBuilder() || '—'}
-                </code>
+            {/* Horário - exceto no modo custom */}
+            {scheduleMode !== 'custom' && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Horário</label>
+                <input
+                  type="time"
+                  step={60}
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  className="w-40 px-3 py-2 bg-slate-50 dark:bg-slate-700/80 border border-slate-300 dark:border-slate-600 rounded-md"
+                />
               </div>
-              <div className="mt-2 text-slate-600 dark:text-slate-300">{humanizeSchedule}</div>
-              <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Observação: o agendamento usa o fuso horário do servidor.
+            )}
+
+            {/* Dias da semana (modo semanal) */}
+            {scheduleMode === 'weekly' && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">Dias da semana</label>
+                <div className="flex flex-wrap gap-2">
+                  {DAY_LABELS.map((d, idx) => {
+                    const active = weeklyDays.includes(idx);
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => toggleWeeklyDay(idx)}
+                        className={`px-3 py-1 rounded-full text-sm border ${
+                          active
+                            ? 'bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-900/30 dark:text-teal-200 dark:border-teal-700'
+                            : 'bg-slate-50 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600'
+                        }`}
+                      >
+                        {d}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              {scheduleError && (
-                <div className="mt-2 text-sm text-red-500">{scheduleError}</div>
-              )}
+            )}
+
+            {/* Dia do mês (modo mensal) */}
+            {scheduleMode === 'monthly' && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Dia do mês</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={monthlyDay}
+                  onChange={(e) => setMonthlyDay(Number(e.target.value))}
+                  className="w-28 px-3 py-2 bg-slate-50 dark:bg-slate-700/80 border border-slate-300 dark:border-slate-600 rounded-md"
+                />
+              </div>
+            )}
+
+            {/* Modo Avançado (Cron) */}
+            {scheduleMode === 'custom' && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Padrão de Agendamento (Formato Cron)</label>
+                <input
+                  type="text"
+                  value={customCron}
+                  onChange={(e) => setCustomCron(e.target.value)}
+                  placeholder="Ex.: 0 8 * * 1-5"
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700/80 border border-slate-300 dark:border-slate-600 rounded-md"
+                />
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Formato: Minuto Hora DiaMês Mês DiaSemana. Exemplos: "0 8 * * 1-5" (8h Seg–Sex), "30 9 * * *" (9:30 todos os dias).
+                </p>
+              </div>
+            )}
+
+            {/* Preview do cron e resumo humano */}
+            <div className="mt-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600">
+              <div className="text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-slate-500 dark:text-slate-400">Cron gerado:</span>
+                  <code className="px-2 py-1 rounded bg-white/70 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-600">
+                    {buildCronFromBuilder() || '—'}
+                  </code>
+                </div>
+                <div className="mt-2 text-slate-600 dark:text-slate-300">{humanizeSchedule}</div>
+                <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Observação: o agendamento usa o fuso horário do servidor.
+                </div>
+                {scheduleError && (
+                  <div className="mt-2 text-sm text-red-500">{scheduleError}</div>
+                )}
+              </div>
             </div>
           </div>
         </div>
+
 
         {/* --- Modelos e Processamento --- */}
         <div className="bg-white/60 dark:bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50">
