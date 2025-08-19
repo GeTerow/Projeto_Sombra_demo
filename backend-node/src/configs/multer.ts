@@ -1,4 +1,4 @@
-import multer, { FileFilterCallback } from 'multer';
+import multer from 'multer';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileFilter } from "../common/middlewares/upload.middleware"

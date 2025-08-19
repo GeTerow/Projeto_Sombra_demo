@@ -239,8 +239,6 @@ def process_audio_task(task_id: str, audio_path: str, config: Dict[str, Any]):
             logger.info("Etapa 4: Atribuindo locutores...")
             result_with_speakers = whisperx.assign_word_speakers(diarize_segments, result_aligned)
             
-            # --- LINHA CRÍTICA ADICIONADA ---
-            # Adiciona a chave 'language' de volta ao objeto de resultado final.
             result_with_speakers["language"] = language_code
             
             if process_device == "cuda": torch.cuda.empty_cache()

@@ -1,4 +1,4 @@
-import multer, { FileFilterCallback } from 'multer';
+import { FileFilterCallback } from 'multer';
 import { Request } from 'express';
 
 // Filtro para validar o tipo de ficheiro
