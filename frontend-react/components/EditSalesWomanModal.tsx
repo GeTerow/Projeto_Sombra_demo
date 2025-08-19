@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../src/services/api';
 import { Spinner } from './Spinner';
 import type { Saleswoman } from '../types';
-import { API_URL } from '../config';
 
 interface Props {
   saleswoman: Saleswoman;
@@ -24,7 +23,7 @@ export const EditSaleswomanModal: React.FC<Props> = ({ saleswoman, onClose, onSa
         setIsLoading(true);
         setError('');
         try {
-            const response = await axios.put<Saleswoman>(`${API_URL}/saleswomen/${saleswoman.id}`, { name });
+            const response = await api.put<Saleswoman>(`/saleswomen/${saleswoman.id}`, { name });
             onSaleswomanUpdated(response.data);
             onClose();
         } catch (err: any) {

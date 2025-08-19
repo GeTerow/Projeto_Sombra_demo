@@ -1,12 +1,9 @@
-// frontend-react/components/AudioUploadForm.tsx
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import axios from 'axios';
+import api from '../src/services/api';
 import { Spinner } from './Spinner';
 import { UploadIcon } from './icons/UploadIcon';
 import { DocumentArrowUpIcon } from './icons/DocumentArrowUpIcon';
 import type { Task, Saleswoman } from '../types';
-import { API_URL } from '../config';
 import { CheckCircleIcon } from "./icons/CheckCircleIcon";
 
 export const AudioUploadForm: React.FC = () => {
@@ -21,7 +18,7 @@ export const AudioUploadForm: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        axios.get<Saleswoman[]>(`${API_URL}/saleswomen`)
+        api.get<Saleswoman[]>('/saleswomen')
             .then(response => {
                 setSaleswomen(response.data);
             })
@@ -99,7 +96,7 @@ export const AudioUploadForm: React.FC = () => {
         formData.append('audio', audioFile);
 
         try {
-            const response = await axios.post<{ task: Task }>(`${API_URL}/tasks`, formData, {
+            const response = await api.post<{ task: Task }>('/tasks', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
@@ -201,7 +198,6 @@ export const AudioUploadForm: React.FC = () => {
                         className="hidden"
                     />
                 </div>
-
 
                 {errorMessage && <p className="text-sm text-red-600 dark:text-red-400 text-center">{errorMessage}</p>}
                 {statusMessage && <p className="text-sm text-green-600 dark:text-green-400 text-center">{statusMessage}</p>}

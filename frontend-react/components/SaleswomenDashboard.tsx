@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import axios from 'axios';
+import api from '../src/services/api';
 import type { Task, Saleswoman } from '../types';
 import { CallSummaryCard } from './CallSummaryCard';
 import { Spinner } from './Spinner';
@@ -61,7 +61,7 @@ export const SaleswomenDashboard: React.FC<SaleswomenDashboardProps> = ({ onSele
     const fetchSaleswomen = async () => {
         setIsLoadingSaleswomen(true);
         try {
-            const response = await axios.get<Saleswoman[]>(`${API_URL}/saleswomen`);
+            const response = await api.get<Saleswoman[]>('/saleswomen');
             const fetched = response.data;
             setSaleswomen(fetched);
             if (fetched.length > 0) {
@@ -80,9 +80,9 @@ export const SaleswomenDashboard: React.FC<SaleswomenDashboardProps> = ({ onSele
         if (!selectedSaleswoman) { setCalls([]); return; }
         const controller = new AbortController();
         setIsLoadingCalls(true);
-        axios.get<Task[]>(`${API_URL}/tasks/saleswomen/${selectedSaleswoman.id}`, { signal: controller.signal })
+        api.get<Task[]>(`/tasks/saleswomen/${selectedSaleswoman.id}`, { signal: controller.signal })
             .then(res => setCalls(res.data))
-            .catch(err => { if (!axios.isCancel(err)) setError('Não foi possível carregar as chamadas.'); })
+            .catch(err => { if (err.name !== 'CanceledError') setError('Não foi possível carregar as chamadas.'); })
             .finally(() => setIsLoadingCalls(false));
         return () => controller.abort();
     }, [selectedSaleswoman?.id]);
@@ -92,7 +92,7 @@ export const SaleswomenDashboard: React.FC<SaleswomenDashboardProps> = ({ onSele
         setIsGenerating(true);
         setError(null);
         try {
-            await axios.post(`${API_URL}/saleswomen/${selectedSaleswoman.id}/generate-summary-pdf`, { force });
+            await api.post(`/saleswomen/${selectedSaleswoman.id}/generate-summary-pdf`, { force });
             showToast('success', 'Resumo gerado com sucesso!');
             fetchSaleswomen();
         } catch (err: any) {
@@ -111,11 +111,12 @@ export const SaleswomenDashboard: React.FC<SaleswomenDashboardProps> = ({ onSele
     const handleDelete = async () => {
         if (!saleswomanToDelete) return;
         try {
-            await axios.delete(`${API_URL}/saleswomen/${saleswomanToDelete.id}`);
+            await api.delete(`/saleswomen/${saleswomanToDelete.id}`);
             showToast('success', `Vendedora "${saleswomanToDelete.name}" excluída.`);
             setModalState(null);
-            setSelectedSaleswoman(null);
             onDataChanged();
+            // Após deletar, busca a lista novamente para refletir a mudança
+            fetchSaleswomen();
         } catch (err) {
             showToast('error', 'Falha ao excluir vendedora.');
         }
@@ -180,7 +181,7 @@ export const SaleswomenDashboard: React.FC<SaleswomenDashboardProps> = ({ onSele
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button onClick={() => handleGenerateSummary(false)} disabled={isGenerating} className="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-60"><DocumentPlusIcon className="w-5 h-5" /> {isGenerating ? 'Gerando...' : 'Gerar Resumo'}</button>
-                                        <a href={`${API_URL}/saleswomen/${selectedSaleswoman.id}/download-summary-pdf`} className={`inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 ${!canDownload && 'opacity-50 cursor-not-allowed'}`}><ArrowDownTrayIcon className="w-5 h-5" /> Baixar PDF</a>
+                                        <a href={`${API_URL}/saleswomen/${selectedSaleswoman.id}/download-summary-pdf?token=${localStorage.getItem('authToken')}`} className={`inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 ${!canDownload && 'opacity-50 cursor-not-allowed'}`}><ArrowDownTrayIcon className="w-5 h-5" /> Baixar PDF</a>
                                     </div>
                                 </div>
                                 {error && <div className="mt-4 bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 p-3 rounded-lg text-sm">{error}</div>}
@@ -206,10 +207,11 @@ export const SaleswomenDashboard: React.FC<SaleswomenDashboardProps> = ({ onSele
                 </main>
             </div>
             
-            {modalState === 'add' && <AddSaleswomanModal onClose={() => setModalState(null)} onSaleswomanAdded={() => { setModalState(null); onDataChanged(); }} />}
-            {modalState === 'edit' && saleswomanToEdit && <EditSaleswomanModal saleswoman={saleswomanToEdit} onClose={() => setModalState(null)} onSaleswomanUpdated={() => { setModalState(null); onDataChanged(); }} />}
+            {modalState === 'add' && <AddSaleswomanModal onClose={() => setModalState(null)} onSaleswomanAdded={() => { setModalState(null); onDataChanged(); fetchSaleswomen(); }} />}
+            {modalState === 'edit' && saleswomanToEdit && <EditSaleswomanModal saleswoman={saleswomanToEdit} onClose={() => setModalState(null)} onSaleswomanUpdated={() => { setModalState(null); onDataChanged(); fetchSaleswomen(); }} />}
             {modalState === 'delete' && saleswomanToDelete && <ConfirmModal open={true} title="Confirmar Exclusão" message={`Tem certeza de que deseja excluir "${saleswomanToDelete.name}"? Todas as suas análises serão removidas.`} confirmText="Excluir" onConfirm={handleDelete} onCancel={() => setModalState(null)} />}
-            <Toast open={toast.open} type={toast.type} message={toast.message} onClose={() => setToast(t => ({ ...t, open: false }))} />
+            {toast.open && <Toast open={toast.open} type={toast.type} message={toast.message} onClose={() => setToast(t => ({ ...t, open: false }))} />}
+            {confirm.open && <ConfirmModal open={confirm.open} message={confirm.message} onConfirm={confirm.onConfirm!} onCancel={() => setConfirm({ open: false, message: '', onConfirm: null })} />}
         </div>
     );
 };

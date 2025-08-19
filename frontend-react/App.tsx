@@ -3,22 +3,22 @@ import { Header } from './components/Header';
 import { AudioUploadForm } from './components/AudioUploadForm';
 import { SaleswomenDashboard } from './components/SaleswomenDashboard';
 import { AnalysisDetailPage } from './components/AnalysisDetailPage';
-import { AddSaleswomanModal } from './components/AddSaleswomanModal';
-import { UploadProgressTracker } from './components/UploadProgressTracker';
-import { SettingsPage } from './components/SettingsPage'; // Importa a nova página
+import { SettingsPage } from './components/SettingsPage';
 import type { Task } from './types';
 import { API_URL } from './config';
+import { LoginPage } from './components/LoginPage'; // Importa a página de login
+import api from './src/services/api'; // Importa a instância do axios configurada
+import { UploadProgressTracker } from './components/UploadProgressTracker';
 
 export type View =
     | { name: 'upload' }
     | { name: 'dashboard' }
     | { name: 'analysis', callId: string }
-    | { name: 'settings' }; // Adiciona a nova view
+    | { name: 'settings' };
 
 export type Theme = 'light' | 'dark';
 
 const App: React.FC = () => {
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [version, setVersion] = useState(0);
     const [currentView, setCurrentView] = useState<View>({ name: 'dashboard' });
     const [theme, setTheme] = useState<Theme>(() => {
@@ -32,35 +32,58 @@ const App: React.FC = () => {
 
     const [tasks, setTasks] = useState<Task[]>([]);
     const [isConnected, setIsConnected] = useState<boolean>(false);
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!localStorage.getItem('authToken'));
+    const [user, setUser] = useState<any>(() => {
+        const storedUser = localStorage.getItem('user');
+        return storedUser ? JSON.parse(storedUser) : null;
+    });
+
+    const handleLoginSuccess = (token: string, userData: any) => {
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        setIsAuthenticated(true);
+        setUser(userData);
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        setIsAuthenticated(false);
+        setUser(null);
+    };
 
     useEffect(() => {
-        const eventSource = new EventSource(`${API_URL}/tasks/stream`);
-        eventSource.onopen = () => setIsConnected(true);
-        eventSource.onmessage = (event) => {
-            try {
-                const updatedTask = JSON.parse(event.data) as Task;
-                if (updatedTask.id) {
-                    setTasks(prevTasks => {
-                        const existingTaskIndex = prevTasks.findIndex(t => t.id === updatedTask.id);
-                        if (existingTaskIndex !== -1) {
-                            const newTasks = [...prevTasks];
-                            newTasks[existingTaskIndex] = updatedTask;
-                            return newTasks;
-                        } else {
-                            return [updatedTask, ...prevTasks].slice(0, 20);
-                        }
-                    });
+        if (isAuthenticated) {
+            const eventSource = new EventSource(`${API_URL}/tasks/stream?token=${localStorage.getItem('authToken')}`);
+            
+            eventSource.onopen = () => setIsConnected(true);
+            eventSource.onmessage = (event) => {
+                try {
+                    const updatedTask = JSON.parse(event.data) as Task;
+                    if (updatedTask.id) {
+                        setTasks(prevTasks => {
+                            const existingTaskIndex = prevTasks.findIndex(t => t.id === updatedTask.id);
+                            if (existingTaskIndex !== -1) {
+                                const newTasks = [...prevTasks];
+                                newTasks[existingTaskIndex] = updatedTask;
+                                return newTasks;
+                            } else {
+                                return [updatedTask, ...prevTasks].slice(0, 20);
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.error("Failed to parse SSE event data:", error);
                 }
-            } catch (error) {
-                console.error("Failed to parse SSE event data:", error);
-            }
-        };
-        eventSource.onerror = () => {
-            setIsConnected(false);
-            eventSource.close();
-        };
-        return () => eventSource.close();
-    }, []);
+            };
+            eventSource.onerror = () => {
+                setIsConnected(false);
+                eventSource.close();
+            };
+            return () => eventSource.close();
+        }
+    }, [isAuthenticated]);
+
 
     useEffect(() => {
         document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -80,8 +103,13 @@ const App: React.FC = () => {
     };
 
     const handleSaleswomanChange = () => {
-        setVersion(v => v + 1); // Força a atualização do dashboard
+        setVersion(v => v + 1);
     };
+    
+    // Se não estiver autenticado, mostra a página de login
+    if (!isAuthenticated) {
+        return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+    }
 
     const renderContent = () => {
         switch (currentView.name) {
@@ -107,7 +135,7 @@ const App: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50">
-            <Header currentView={currentView} onViewChange={navigateTo} theme={theme} onThemeToggle={handleThemeToggle} />
+            <Header currentView={currentView} onViewChange={navigateTo} theme={theme} onThemeToggle={handleThemeToggle} onLogout={handleLogout} />
             <main className="relative">
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-rose-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900" />
                 <div className="relative">{renderContent()}</div>

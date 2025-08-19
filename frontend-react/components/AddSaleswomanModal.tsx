@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../src/services/api';
 import { Spinner } from './Spinner';
 import type { Saleswoman } from '../types';
-import { API_URL } from '../config';
 
 interface Props {
   onClose: () => void;
@@ -23,9 +22,9 @@ export const AddSaleswomanModal: React.FC<Props> = ({ onClose, onSaleswomanAdded
         setIsLoading(true);
         setError('');
         try {
-            const response = await axios.post<Saleswoman>(`${API_URL}/saleswomen`, { name });
-            onSaleswomanAdded(response.data); // Notifica o componente pai sobre a adição
-            onClose(); // Fecha o modal
+            const response = await api.post<Saleswoman>('/saleswomen', { name });
+            onSaleswomanAdded(response.data); 
+            onClose(); 
         } catch (err: any) {
             setError(err.response?.data?.error || 'Ocorreu um erro desconhecido ao adicionar a vendedora.');
         } finally {
@@ -40,7 +39,7 @@ export const AddSaleswomanModal: React.FC<Props> = ({ onClose, onSaleswomanAdded
         >
             <div 
                 className="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-xl w-full max-w-md animate-modal-in"
-                onClick={(e) => e.stopPropagation()} // Impede que o clique dentro do modal o feche
+                onClick={(e) => e.stopPropagation()} 
             >
                 <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-white">Adicionar Nova Vendedora</h2>
                 <form onSubmit={handleSubmit}>

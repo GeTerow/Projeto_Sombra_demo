@@ -1,7 +1,5 @@
-// frontend-react/components/AnalysisDetailPage.tsx
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import axios from 'axios';
+import api from '../src/services/api';
 import type { Task } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { API_URL } from '../config';
@@ -258,8 +256,8 @@ export const AnalysisDetailPage: React.FC<AnalysisDetailPageProps> = ({ callId, 
 
   useEffect(() => {
     setIsLoading(true);
-    axios
-      .get<Task>(`${API_URL}/tasks/${callId}`)
+    api 
+      .get<Task>(`/tasks/${callId}`)
       .then((response) => setCall(response.data))
       .catch(() => setError('Não foi possível carregar os detalhes da análise.'))
       .finally(() => setIsLoading(false));
@@ -303,7 +301,7 @@ export const AnalysisDetailPage: React.FC<AnalysisDetailPageProps> = ({ callId, 
         <button onClick={onBack} className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"><ArrowLeftIcon className="w-5 h-5" /> Voltar para o Dashboard</button>
         <div className="flex items-center gap-2">
           <button onClick={() => handleCopy(`${window.location.origin}/tasks/${callId}`, 'link')} className="inline-flex items-center gap-2 text-sm font-medium px-3.5 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">{copied === 'link' ? <CheckIcon className="w-5 h-5 text-emerald-500" /> : <LinkIcon className="w-5 h-5" />}{copied === 'link' ? 'Link copiado!' : 'Copiar link'}</button>
-          <a href={`${API_URL}/tasks/${callId}/pdf`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-medium px-3.5 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-indigo-500 text-white hover:opacity-95 transition"><DocumentArrowDownIcon className="w-5 h-5" /> Exportar PDF</a>
+          <a href={`${API_URL}/tasks/${callId}/pdf?token=${localStorage.getItem('authToken')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-medium px-3.5 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-indigo-500 text-white hover:opacity-95 transition"><DocumentArrowDownIcon className="w-5 h-5" /> Exportar PDF</a>
         </div>
       </div>
 
@@ -335,7 +333,7 @@ export const AnalysisDetailPage: React.FC<AnalysisDetailPageProps> = ({ callId, 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <h3 className="font-semibold text-lg text-slate-900 dark:text-white mb-3">Áudio da Ligação</h3>
-                    <audio controls className="w-full"><source src={`${API_URL}/tasks/${call.id}/audio`} type="audio/mpeg" />Seu navegador não suporta o elemento de áudio.</audio>
+                    <audio controls className="w-full"><source src={`${API_URL}/tasks/${call.id}/audio?token=${localStorage.getItem('authToken')}`} type="audio/mpeg" />Seu navegador não suporta o elemento de áudio.</audio>
                     <div className="mt-4">
                       <h3 className="font-semibold text-lg text-slate-900 dark:text-white mb-3">Resumo da Conversa</h3>
                       <p className="text-sm text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/70 p-4 rounded-lg border border-slate-200 dark:border-slate-700">{analysisData.summary}</p>

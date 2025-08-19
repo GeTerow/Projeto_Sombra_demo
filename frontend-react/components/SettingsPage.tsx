@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
-import { API_URL } from '../config';
-import { Spinner } from './Spinner'; // Reutilizaremos o componente Spinner
+import api from '../src/services/api';
+import { Spinner } from './Spinner';
 
 // Ícones para a UI
 const KeyIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" /></svg>;
@@ -32,7 +31,7 @@ export const SettingsPage: React.FC = () => {
     const fetchConfig = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await axios.get<ConfigFormData>(`${API_URL}/config`);
+            const response = await api.get<ConfigFormData>('/config');
             setConfig(response.data);
         } catch (err) {
             setError('Não foi possível carregar as configurações.');
@@ -56,7 +55,7 @@ export const SettingsPage: React.FC = () => {
         setError(null);
         setSuccessMessage(null);
         try {
-            await axios.put(`${API_URL}/config`, config);
+            await api.put('/config', config);
             setSuccessMessage('Configurações salvas com sucesso!');
             setTimeout(() => setSuccessMessage(null), 3000);
         } catch (err) {
@@ -75,7 +74,6 @@ export const SettingsPage: React.FC = () => {
             <h1 className="text-3xl font-bold text-slate-800 dark:text-white mb-6">Configurações do Sistema</h1>
             
             <form onSubmit={handleSubmit} className="space-y-10">
-                {/* Seção de Chaves de API */}
                 <div className="bg-white/60 dark:bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50">
                     <h2 className="text-xl font-bold flex items-center gap-3"><KeyIcon className="w-6 h-6 text-amber-500"/> Chaves de API</h2>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-6">As chaves não são exibidas por segurança. Para alterar, insira um novo valor.</p>
@@ -95,7 +93,6 @@ export const SettingsPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Seção de Modelos */}
                 <div className="bg-white/60 dark:bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50">
                     <h2 className="text-xl font-bold flex items-center gap-3"><CogIcon className="w-6 h-6 text-sky-500"/> Modelos e Processamento</h2>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-6">Controle quais modelos e hardware serão usados pelo worker de IA.</p>
@@ -127,7 +124,6 @@ export const SettingsPage: React.FC = () => {
                     </div>
                 </div>
                 
-                {/* Botão de Salvar e Mensagens */}
                 <div className="flex items-center justify-end gap-4 pt-4">
                     {error && <p className="text-sm text-red-500">{error}</p>}
                     {successMessage && <p className="text-sm text-green-600 flex items-center gap-2"><CheckCircleIcon className="w-5 h-5"/> {successMessage}</p>}
