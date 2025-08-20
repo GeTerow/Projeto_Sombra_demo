@@ -4,9 +4,12 @@ import { defineConfig, loadEnv } from 'vite';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+      server: {
+        // Isto diz ao Vite para "escutar" em todas as interfaces de rede,
+        // o que o torna acessível através de localhost, IP e nomes de anfitrião personalizados.
+        host: true,
+        // Garante que o Vite use a porta correta dentro do container.
+        port: 5173, 
       },
       resolve: {
         alias: {
