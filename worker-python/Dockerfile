@@ -14,6 +14,7 @@ COPY . .
 
 # Copia o script de inicialização e o torna executável
 COPY entrypoint.sh .
+RUN sed -i 's/\r$//g' ./entrypoint.sh
 RUN chmod +x entrypoint.sh
 
 # Comando para iniciar os serviços usando o script
