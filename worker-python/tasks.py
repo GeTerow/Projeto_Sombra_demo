@@ -1,4 +1,3 @@
-# tasks.py
 import os
 import logging
 import requests
@@ -37,7 +36,7 @@ logger.info("Iniciando a configuração do Worker de IA...")
 # --- Constantes e Configurações Padrão ---
 NODE_BACKEND_URL = os.getenv("NODE_BACKEND_URL", "http://localhost:3001")
 ASSISTANT_MAX_WAIT_S = int(os.getenv("ASSISTANT_MAX_WAIT_S", "300"))
-
+INTERNAL_API_KEY = os.getenv("INTERNAL_API_KEY") 
 # --- Detecção de Dispositivo ---
 def detect_device() -> str:
     if torch.cuda.is_available():
@@ -88,12 +87,20 @@ def get_align_model(language_code: str, device: str) -> Tuple[Any, Any]:
 # --- Utilitários ---
 def notify_backend(webhook_url: str, payload: Dict[str, Any], timeout: int = 20) -> None:
     try:
-        resp = requests.patch(webhook_url, json=payload, timeout=timeout)
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        if INTERNAL_API_KEY:
+            headers['x-internal-api-key'] = INTERNAL_API_KEY
+        else:
+            logger.warning("INTERNAL_API_KEY não definida. A notificação para o backend pode falhar.")
+
+        resp = requests.patch(webhook_url, json=payload, headers=headers, timeout=timeout)
+        
         if resp.status_code >= 400:
             logger.error(f"Webhook para {webhook_url} retornou status {resp.status_code}: {resp.text}")
     except requests.RequestException as req_e:
         logger.error(f"Falha ao notificar backend em {webhook_url}: {req_e}")
-
 def generate_vtt(segments_obj: Dict[str, Any], audio_path: str) -> str:
     with tempfile.TemporaryDirectory() as temp_dir:
         writer = whisperx.utils.WriteVTT(output_dir=temp_dir)

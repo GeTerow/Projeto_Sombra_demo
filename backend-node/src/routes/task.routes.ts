@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as taskController from '../controllers/task.controller';
 import { upload } from '../configs/multer';
 import { authenticateToken } from '../common/middlewares/auth.middleware';
+import { authenticateWorker } from '../common/middlewares/internalAuth.middleware';
 
 const router = Router();
 
@@ -21,7 +22,7 @@ router.get('/:id/audio', authenticateToken, taskController.getTaskAudio);
 router.post('/', upload.single('audio'), authenticateToken, taskController.createTask);
 
 // Rota para o webhook de atualização de tarefa (usada pelo worker)
-router.patch('/:id/complete', authenticateToken, taskController.updateTask);
+router.patch('/:id/complete', authenticateWorker, taskController.updateTask);
 
 // Rota para o PDF de análise da tarefa
 router.get('/:id/pdf', authenticateToken, taskController.getTaskPdf);

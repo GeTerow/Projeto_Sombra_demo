@@ -18,9 +18,22 @@ export const createTask = async (clientName: string, saleswomanId: string, fileP
   sendSseEvent(newTask);
 
   try {
-    const config = await getAllConfigs();
+    const allConfigs = await getAllConfigs();
     
-    await notifyWorkerToProcessTask(newTask.id, filePath, config);
+    // Filtra as configurações para enviar apenas o necessário para o worker
+    const workerConfig = {
+      OPENAI_API_KEY: allConfigs.OPENAI_API_KEY,
+      HF_TOKEN: allConfigs.HF_TOKEN,
+      OPENAI_ASSISTANT_ID: allConfigs.OPENAI_ASSISTANT_ID,
+      WHISPERX_MODEL: allConfigs.WHISPERX_MODEL,
+      DIAR_DEVICE: allConfigs.DIAR_DEVICE,
+      ALIGN_DEVICE: allConfigs.ALIGN_DEVICE
+    };
+
+    // --- LOG DE DEPURAÇÃO ADICIONADO ---
+    console.log(`[TaskService] Enviando para o worker. Task ID: ${newTask.id}, FilePath: ${filePath}`);
+    
+    await notifyWorkerToProcessTask(newTask.id, filePath, workerConfig);
 
   } catch (error) {
     console.error(`[TaskService] Falha ao notificar worker, atualizando status da tarefa ${newTask.id} para FAILED.`);

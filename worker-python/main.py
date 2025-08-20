@@ -1,8 +1,8 @@
 # main.py
 import os
 import uvicorn
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Request # ADICIONADO Request
+from pydantic import BaseModel, ValidationError # ADICIONADO ValidationError
 from typing import List, Dict, Any
 import openai
 from dotenv import load_dotenv
@@ -53,17 +53,31 @@ def health_redis_check():
 
 # --- Endpoints Principais ---
 @app.post("/process-task", status_code=202)
-def process_task_endpoint(request: ProcessTaskRequest):
+async def process_task_endpoint(raw_request: Request): # ASSINATURA ALTERADA
     """
     Recebe a tarefa, incluindo sua configuração, e a envia para a fila do Celery.
     """
-    if not os.path.exists(request.file_path):
-        raise HTTPException(status_code=404, detail=f"Arquivo de áudio não encontrado em: {request.file_path}")
+    # 1. Logar o corpo bruto da requisição
+    body = await raw_request.json()
+    print(f"[API FastAPI] CORPO DA REQUISIÇÃO RECEBIDO: {body}")
+
+    # 2. Tentar validar manualmente com o Pydantic
+    try:
+        request = ProcessTaskRequest.model_validate(body)
+    except ValidationError as e:
+        print(f"[API FastAPI] ERRO DE VALIDAÇÃO Pydantic: {e.errors()}")
+        raise HTTPException(status_code=422, detail=e.errors())
+
+    # 3. Logar o caminho específico que será verificado
+    file_path_to_check = request.file_path
+    print(f"[API FastAPI] Verificando existência do arquivo em: {file_path_to_check}")
+    
+    if not os.path.exists(file_path_to_check):
+        print(f"[API FastAPI] ARQUIVO NÃO ENCONTRADO! Retornando 404.")
+        raise HTTPException(status_code=404, detail=f"Arquivo de áudio não encontrado em: {file_path_to_check}")
 
     try:
-        print(f"[API FastAPI] Tarefa recebida: {request.task_id}. Enviando para a fila do Celery.")
-        # --- LINHA CRÍTICA CORRIGIDA ---
-        # Agora estamos passando os 3 argumentos que a tarefa espera: task_id, file_path, e config
+        print(f"[API FastAPI] Tarefa validada: {request.task_id}. Enviando para a fila do Celery.")
         process_audio_task.delay(request.task_id, request.file_path, request.config)
         
         return {"message": "Tarefa de processamento de áudio aceita e enfileirada para execução."}

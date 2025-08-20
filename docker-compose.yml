@@ -24,6 +24,7 @@ services:
       PYTHON_WORKER_URL: "http://worker:8000"
       PORT: 3001
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY} 
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_NAME: ${ADMIN_NAME}
@@ -41,9 +42,12 @@ services:
       context: ./worker-python
       dockerfile: Dockerfile
     container_name: sombra-worker
+    ports:
+      - "8000:8000"
     environment:
       REDIS_URL: "redis://redis:6379/0"
       NODE_BACKEND_URL: "http://backend:3001"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY} 
     volumes:
       - ./backend-node/uploads:/app/uploads
     depends_on:

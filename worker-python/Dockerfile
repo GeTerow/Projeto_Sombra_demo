@@ -12,7 +12,6 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 # Copia o código da aplicação
 COPY . .
 
-# --- CORREÇÃO APLICADA ---
 # Copia o script de inicialização e o torna executável
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh

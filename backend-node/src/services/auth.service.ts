@@ -31,7 +31,7 @@ export const loginUser = async (email: string, password_plain: string): Promise<
   };
 
   const token = jwt.sign(payload, jwtSecret, {
-    expiresIn: '24h',
+    expiresIn: '7d',
   });
 
   const { password, ...userWithoutPassword } = user;

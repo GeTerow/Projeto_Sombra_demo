@@ -1,9 +1,13 @@
 #!/bin/bash
+set -e
 
-# Inicia o servidor FastAPI/Uvicorn em segundo plano
-echo "Iniciando o servidor FastAPI..."
-uvicorn main:app --host 0.0.0.0 --port 8000 &
+# Ajuste para o diretório da aplicação (ajuste se seu código está em /app)
+cd /app || cd /usr/src/app || true
 
-# Inicia o worker do Celery em primeiro plano
-echo "Iniciando o worker do Celery..."
-celery -A celery_app worker --loglevel=info
+echo "Diretório atual: $(pwd)"
+echo "Iniciando o servidor FastAPI (uvicorn) em background..."
+# garante app-dir explícito caso o cd falhe
+uvicorn --app-dir /app main:app --host 0.0.0.0 --port 8000 &
+
+echo "Iniciando o worker do Celery em foreground..."
+exec celery -A celery_app worker --loglevel=info
