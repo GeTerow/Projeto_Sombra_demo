@@ -26,6 +26,7 @@ class ProcessTaskRequest(BaseModel):
 class GenerateSummaryRequest(BaseModel):
     name: str
     transcriptions: List[str]
+    openai_api_key: str
 
 
 # --- API (FastAPI) ---
@@ -89,9 +90,7 @@ async def process_task_endpoint(raw_request: Request): # ASSINATURA ALTERADA
 
 @app.post("/generate-summary")
 def generate_summary(request: GenerateSummaryRequest):
-    # ... (o resto do arquivo permanece o mesmo)
-    if not openai.api_key:
-        raise HTTPException(status_code=500, detail="A chave da API da OpenAI não foi configurada no servidor.")
+    client = openai.OpenAI(api_key=request.openai_api_key)
     
     print(f"-> Gerando resumo para {request.name} com base em {len(request.transcriptions)} transcricoes.")
     
@@ -131,7 +130,7 @@ def generate_summary(request: GenerateSummaryRequest):
     """
     
     try:
-        response = openai.chat.completions.create(
+        response = client.chat.completions.create(
             model="gpt-5-nano-2025-08-07",
             messages=[
                 {"role": "system", "content": "Você é um gerente de vendas sênior elaborando um feedback de desempenho."},

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { IAppConfig } from '../common/interfaces/IAppConfig';
+import { getAllConfigs } from '../services/config.service';
 
 const WORKER_URL = process.env.PYTHON_WORKER_URL || 'http://localhost:8000';
 
@@ -27,9 +28,19 @@ export const generateConsolidatedSummary = async (name: string, transcriptions: 
     const workerEndpoint = `${WORKER_URL}/generate-summary`;
     console.log(`[Node Backend] Solicitando resumo para ${name} ao worker.`);
     
+    // Busque as configurações antes de fazer a chamada
+    const configs = await getAllConfigs();
+    const openaiApiKey = configs.OPENAI_API_KEY;
+
+    if (!openaiApiKey) {
+      throw new Error('A chave da API da OpenAI não está configurada no backend.');
+    }
+
     const response = await axios.post<{ summary: string }>(workerEndpoint, {
       name,
       transcriptions,
+      // Envie a chave na requisição
+      openai_api_key: openaiApiKey,
     });
 
     return response.data.summary;
