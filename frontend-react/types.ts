@@ -60,3 +60,14 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
 }
+
+export type UserRole = 'ADMIN' | 'USER';
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  createdAt: string;
+  updatedAt: string;
+}

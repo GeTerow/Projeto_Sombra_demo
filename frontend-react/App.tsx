@@ -1,20 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Header } from './components/Header';
+import { Sidebar } from './components/SideBar';
 import { AudioUploadForm } from './components/AudioUploadForm';
 import { SaleswomenDashboard } from './components/SaleswomenDashboard';
 import { AnalysisDetailPage } from './components/AnalysisDetailPage';
 import { SettingsPage } from './components/SettingsPage';
+import { UserManagementPage } from './components/UserManagementPage';
 import type { Task } from './types';
 import { API_URL } from './config';
-import { LoginPage } from './components/LoginPage'; // Importa a página de login
-import api from './src/services/api'; // Importa a instância do axios configurada
+import { LoginPage } from './components/LoginPage';
+import api from './src/services/api';
 import { UploadProgressTracker } from './components/UploadProgressTracker';
 
 export type View =
     | { name: 'upload' }
     | { name: 'dashboard' }
     | { name: 'analysis', callId: string }
-    | { name: 'settings' };
+    | { name: 'settings' }
+    | { name: 'users' };
 
 export type Theme = 'light' | 'dark';
 
@@ -94,7 +96,7 @@ const App: React.FC = () => {
         setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
     }, []);
 
-    const navigateTo = (viewName: 'upload' | 'dashboard' | 'settings') => {
+    const navigateTo = (viewName: 'upload' | 'dashboard' | 'settings' | 'users') => {
         setCurrentView({ name: viewName } as View);
     };
 
@@ -106,7 +108,6 @@ const App: React.FC = () => {
         setVersion(v => v + 1);
     };
     
-    // Se não estiver autenticado, mostra a página de login
     if (!isAuthenticated) {
         return <LoginPage onLoginSuccess={handleLoginSuccess} />;
     }
@@ -115,8 +116,8 @@ const App: React.FC = () => {
         switch (currentView.name) {
             case 'upload':
                 return (
-                    <div className="max-w-7xl mx-auto p-4 md:p-8 min-h-[calc(100vh-80px)]">
-                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    <div className="max-w-7xl mx-auto p-4 md:p-8 flex items-center min-h-screen">
+                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 w-full">
                             <div className="lg:col-span-3"><AudioUploadForm key={`form-${version}`} /></div>
                             <div className="lg:col-span-2"><UploadProgressTracker tasks={tasks} isConnected={isConnected} /></div>
                         </div>
@@ -128,6 +129,8 @@ const App: React.FC = () => {
                 return <AnalysisDetailPage callId={currentView.callId} onBack={() => navigateTo('dashboard')} />;
             case 'settings':
                 return <SettingsPage />;
+            case 'users':
+                return <UserManagementPage />;
             default:
                 return <SaleswomenDashboard key={`dashboard-default-${version}`} onSelectCall={navigateToAnalysis} onDataChanged={handleSaleswomanChange} />;
         }
@@ -135,10 +138,17 @@ const App: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50">
-            <Header currentView={currentView} onViewChange={navigateTo} theme={theme} onThemeToggle={handleThemeToggle} onLogout={handleLogout} />
-            <main className="relative">
+            <Sidebar 
+                currentView={currentView} 
+                onViewChange={navigateTo} 
+                theme={theme} 
+                onThemeToggle={handleThemeToggle} 
+                onLogout={handleLogout}
+                user={user}
+            />
+            <main className="relative pl-64">
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-rose-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900" />
-                <div className="relative">{renderContent()}</div>
+                <div className="relative z-0">{renderContent()}</div>
             </main>
         </div>
     );

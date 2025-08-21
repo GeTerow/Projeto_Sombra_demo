@@ -2,6 +2,16 @@ import { prisma } from '../lib/prisma';
 import { Prisma, User } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
+export const getAllUsers = async (): Promise<Omit<User, 'password'>[]> => {
+  const users = await prisma.user.findMany({
+    orderBy: {
+      name: 'asc',
+    },
+  });
+  // Mapeia para remover a senha de cada usuário
+  return users.map(({ password, ...userWithoutPassword }) => userWithoutPassword);
+};
+
 export const createUser = async (
   data: Prisma.UserCreateInput
 ): Promise<Omit<User, 'password'>> => {

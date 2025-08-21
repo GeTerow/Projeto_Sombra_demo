@@ -127,9 +127,9 @@ export const SaleswomenDashboard: React.FC<SaleswomenDashboardProps> = ({ onSele
 
     return (
         <div className="relative">
-            <div className="relative flex flex-col md:flex-row max-w-7xl mx-auto p-4 sm:px-6 lg:px-8 gap-8 min-h-[calc(100vh-80px)]">
+            <div className="relative flex flex-col md:flex-row max-w-7xl mx-auto p-4 sm:px-6 lg:px-8 gap-8 min-h-screen">
                 <aside className="w-full md:w-1/3 lg:w-1/4">
-                    <div className="bg-white/70 dark:bg-slate-800/60 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/70 dark:border-slate-700/50 p-4 sticky top-24">
+                    <div className="bg-white/70 dark:bg-slate-800/60 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/70 dark:border-slate-700/50 p-4 sticky top-6">
                         <div className="flex items-center justify-between mb-3">
                             <h2 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Vendedoras</h2>
                             <button onClick={() => setModalState('add')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg bg-primary-600 hover:bg-primary-700 text-white shadow-sm">
@@ -143,7 +143,7 @@ export const SaleswomenDashboard: React.FC<SaleswomenDashboardProps> = ({ onSele
                         {isLoadingSaleswomen ? (
                             <ul className="space-y-2">{Array.from({ length: 6 }).map((_, i) => <li key={i}><Skeleton className="h-14 w-full" /></li>)}</ul>
                         ) : (
-                            <ul className="space-y-2 max-h-[60vh] overflow-auto pr-1">
+                            <ul className="space-y-2 max-h-[calc(100vh-12rem)] overflow-auto pr-1">
                                 {filteredSaleswomen.map(s => {
                                     const isSelected = selectedSaleswoman?.id === s.id;
                                     return (
@@ -164,7 +164,7 @@ export const SaleswomenDashboard: React.FC<SaleswomenDashboardProps> = ({ onSele
                     </div>
                 </aside>
 
-                <main className="w-full md:w-2/3 lg:w-3/4">
+                <main className="w-full md:w-2/3 lg:w-3/4 py-2">
                     {selectedSaleswoman ? (
                         <div className="animate-[fadeIn_0.25s_ease]">
                             <div className="relative overflow-hidden rounded-2xl border border-slate-200/70 dark:border-slate-700/50 shadow-xl bg-gradient-to-br from-white/90 to-white/60 dark:from-slate-800/80 dark:to-slate-800/50 mb-4 p-5">

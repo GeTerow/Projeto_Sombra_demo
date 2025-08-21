@@ -4,6 +4,16 @@ import { Request, Response } from 'express';
 import * as userService from '../services/user.service';
 import { Prisma } from '@prisma/client';
 
+export const listUsers = async (req: Request, res: Response) => {
+  try {
+    const users = await userService.getAllUsers();
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("[UserController] Erro ao listar usuários:", error);
+    res.status(500).json({ error: 'Falha ao buscar a lista de usuários.' });
+  }
+};
+
 export const createNewUser = async (req: Request, res: Response) => {
   const { name, email, password, role } = req.body;
 
