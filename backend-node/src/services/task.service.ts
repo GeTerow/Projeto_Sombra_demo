@@ -85,7 +85,11 @@ export const getTaskById = async (taskId: string): Promise<(Task & { saleswoman:
 
 export const getTasksBySaleswoman = async (saleswomanId: string): Promise<Task[]> => {
   return prisma.task.findMany({
-    where: { saleswomanId, status: 'COMPLETED' },
+    where: {
+      saleswomanId,
+      status: 'COMPLETED',
+      analysis: { not: Prisma.JsonNull },
+    },
     orderBy: { createdAt: 'desc' },
   });
 };
