@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import api from '../src/services/api';
 import type { Task, Saleswoman } from '../types';
 import { CallSummaryCard } from './CallSummaryCard';
-import { Spinner } from './Spinner';
 import { API_URL } from '../config';
 import { AddSaleswomanModal } from './AddSaleswomanModal';
 import { EditSaleswomanModal } from './EditSalesWomanModal';

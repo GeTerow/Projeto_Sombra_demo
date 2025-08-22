@@ -44,12 +44,21 @@ type StageKey = 'opening' | 'discovery' | 'qualification' | 'closing';
 interface StageData { score: number; feedback: string; improvementSuggestion: string; }
 interface Performance { overallScore: number; stages: Record<StageKey, StageData>; }
 interface ImprovementPoint { salespersonLine: string; context: string; whatWentWrong?: string; impact?: string; suggestion: string; }
-interface NewAnalysis { summary: string; customerProfile: { name: string; profile: string; communicationStyle: string; }; performance: Performance; improvementPoints: ImprovementPoint[]; }
+// ALTERADO: Adicionado speakerMapping à interface NewAnalysis
+interface NewAnalysis {
+  summary: string;
+  speakerMapping: Record<string, string>;
+  customerProfile: { name: string; profile: string; communicationStyle: string; };
+  performance: Performance;
+  improvementPoints: ImprovementPoint[];
+}
 
+// ALTERADO: Adicionado a verificação de speakerMapping
 const isNewAnalysis = (a: any): a is NewAnalysis => {
   return (
     a && typeof a === 'object' &&
     'summary' in a &&
+    'speakerMapping' in a && // Verificação adicionada
     'customerProfile' in a &&
     a.customerProfile && 'name' in a.customerProfile &&
     'performance' in a &&
@@ -59,8 +68,13 @@ const isNewAnalysis = (a: any): a is NewAnalysis => {
 };
 
 /* MOCK atualizado para desenvolvimento */
+// ALTERADO: Adicionado speakerMapping ao mock
 const MOCK_ANALYSIS: NewAnalysis = {
   summary: "A chamada consistiu em um atendimento de venda recorrente, onde a cliente solicitou um novo pedido de papel toalha. A vendedora conduziu o processo de forma organizada, confirmou dados cadastrais, valores, condições de pagamento e entrega. O pedido foi finalizado conforme solicitado, demonstrando cordialidade, mas sem explorar oportunidades de venda adicional.",
+  speakerMapping: {
+    "SPEAKER_01": "Vendedora",
+    "SPEAKER_02": "Cliente"
+  },
   customerProfile: { name: "Não informado", profile: "Compradora recorrente, provavelmente responsável por compras de suprimentos.", communicationStyle: "Direto e objetivo" },
   performance: {
     overallScore: 74,
@@ -187,6 +201,19 @@ const NewAnalysisContent: React.FC<{ analysis: NewAnalysis; onCopy: (text: strin
               );
             })}
           </div>
+        </div>
+      </section>
+      
+      {/* ADICIONADO: Seção para exibir o speakerMapping */}
+      <section>
+        <h3 className="font-semibold text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-3"><ChatBubbleIcon className="w-5 h-5 text-sky-500" /> Identificação dos Participantes</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {Object.entries(analysis.speakerMapping).map(([key, value]) => (
+            <div key={key} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{key}</p>
+              <p className="mt-1 font-semibold text-slate-900 dark:text-white capitalize">{value}</p>
+            </div>
+          ))}
         </div>
       </section>
 
