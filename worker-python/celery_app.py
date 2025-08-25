@@ -1,6 +1,12 @@
 # celery_app.py
 import os
+import torch
 from celery import Celery
+
+# Corrigir problema de re-inicialização do CUDA em subprocessos (fork)
+# Deve ser chamado antes de qualquer operação CUDA.
+if torch.cuda.is_available():
+    torch.multiprocessing.set_start_method('spawn', force=True)
 
 # Use REDIS_URL do .env se disponível
 REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6380/0')

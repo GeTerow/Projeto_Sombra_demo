@@ -199,9 +199,9 @@ def process_audio_task(task_id: str, audio_path: str, config: Dict[str, Any]):
     
     hf_token = config.get("HF_TOKEN")
     whisperx_model_name = config.get("WHISPERX_MODEL", "large-v3")
-    diar_device = config.get("DIAR_DEVICE", "cpu")
-    align_device = config.get("ALIGN_DEVICE", "cpu")
-    process_device = "cuda" if DEVICE == "cuda" else "cpu"
+    
+    # Usa o dispositivo global detectado (cuda, mps, cpu) para todos os modelos
+    logger.info(f"Dispositivo de processamento para esta tarefa: {DEVICE}")
 
     if not all([hf_token]):
         error_message = "Configuração incompleta: HF_TOKEN não foi fornecido."
@@ -218,8 +218,8 @@ def process_audio_task(task_id: str, audio_path: str, config: Dict[str, Any]):
     audio, result_transcribe, result_aligned, diarize_segments, result_with_speakers = None, None, None, None, None
 
     try:
-        model = load_whisper_model(whisperx_model_name, process_device, COMPUTE_TYPE_DEFAULT)
-        diarize_model = get_diarize_model(hf_token, diar_device)
+        model = load_whisper_model(whisperx_model_name, DEVICE, COMPUTE_TYPE_DEFAULT)
+        diarize_model = get_diarize_model(hf_token, DEVICE)
 
         logger.info(f"Carregando áudio: {audio_path}")
         with torch.inference_mode():
@@ -230,13 +230,13 @@ def process_audio_task(task_id: str, audio_path: str, config: Dict[str, Any]):
             result_transcribe = model.transcribe(audio, batch_size=BATCH_SIZE)
             language_code = result_transcribe.get("language", "pt")
             logger.info(f"Idioma detectado: {language_code}")
-            if process_device == "cuda": torch.cuda.empty_cache()
+            if DEVICE == "cuda": torch.cuda.empty_cache()
 
             logger.info("Etapa 2: Alinhando...")
             notify_backend(webhook_url, {"status": "ALIGNING"})
-            model_a, metadata = get_align_model(language_code, align_device)
-            result_aligned = whisperx.align(result_transcribe["segments"], model_a, metadata, audio, align_device, return_char_alignments=False)
-            if process_device == "cuda": torch.cuda.empty_cache()
+            model_a, metadata = get_align_model(language_code, DEVICE)
+            result_aligned = whisperx.align(result_transcribe["segments"], model_a, metadata, audio, DEVICE, return_char_alignments=False)
+            if DEVICE == "cuda": torch.cuda.empty_cache()
 
             logger.info("Etapa 3: Diarizando...")
             notify_backend(webhook_url, {"status": "DIARIZING"})
@@ -245,7 +245,7 @@ def process_audio_task(task_id: str, audio_path: str, config: Dict[str, Any]):
             logger.info("Etapa 4: Atribuindo locutores...")
             result_with_speakers = whisperx.assign_word_speakers(diarize_segments, result_aligned)
             result_with_speakers["language"] = language_code
-            if process_device == "cuda": torch.cuda.empty_cache()
+            if DEVICE == "cuda": torch.cuda.empty_cache()
 
             logger.info("Etapa 5: Gerando VTT...")
             vtt_content = generate_vtt(result_with_speakers, audio_path)
@@ -274,7 +274,7 @@ def process_audio_task(task_id: str, audio_path: str, config: Dict[str, Any]):
         if result_with_speakers is not None: del result_with_speakers
         
         gc.collect()
-        if process_device == "cuda" and torch.cuda.is_available():
+        if DEVICE == "cuda" and torch.cuda.is_available():
             torch.cuda.empty_cache()
         logger.info(f"[Worker Celery] Finalizado processamento de transcrição | task_id={task_id}")
 
