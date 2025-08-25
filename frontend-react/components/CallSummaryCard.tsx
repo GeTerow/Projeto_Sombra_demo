@@ -1,20 +1,10 @@
 // src/components/CallSummaryCard.tsx
 
 import React from 'react';
-// Para este exemplo, vou definir o tipo 'Task' aqui.
-// No seu projeto, você continuaria a importá-lo de '../types'.
-export type Task = {
-  id: string;
-  clientName: string;
-  createdAt: string; // ou Date
-  status: 'COMPLETED' | 'FAILED' | 'PENDING';
-  analysis?: any; // Defina um tipo mais específico se tiver
-};
+// Import the main Task type, which includes all possible statuses
+import { Task } from '../types';
 
 // --- Ícones ---
-// É uma boa prática manter os ícones como componentes para consistência.
-// Se eles não forem usados em outros lugares, podem ficar aqui.
-
 const CalendarIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0h18M-7.5 12h13.5" />
@@ -33,11 +23,14 @@ const XCircleIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   </svg>
 );
 
+const ClockIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+);
+
 
 // --- Componente Interno para Lógica de Status ---
-// Este componente isola a responsabilidade de renderizar o status.
-// Fica mais fácil de ler e modificar a lógica de status aqui.
-
 interface StatusIndicatorProps {
   status: Task['status'];
   hasAnalysis: boolean;
@@ -62,13 +55,22 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({ status, hasAnalysis }
     );
   }
 
-  return null; // Não renderiza nada para outros status
+  // Adicionado um status para "Pendente" ou outros estados intermediários
+  if (status === 'PENDING' || status === 'TRANSCRIBING' || status === 'ANALYZING') {
+    return (
+        <div className="flex items-center gap-1.5 mt-2 text-xs font-medium text-sky-600 dark:text-sky-400">
+            <ClockIcon className="w-4 h-4" />
+            <span>Em progresso</span>
+        </div>
+    );
+  }
+
+
+  return null; // Não renderiza nada para outros status que não queremos mostrar no card
 };
 
 
 // --- Constantes de Estilo ---
-// Extrair classes longas do Tailwind para constantes melhora a legibilidade do JSX.
-
 const cardBaseClasses = "w-full text-left bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700/50";
 const cardInteractionClasses = "transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl hover:border-primary-300 dark:hover:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-opacity-50";
 

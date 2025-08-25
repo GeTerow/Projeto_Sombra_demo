@@ -100,3 +100,16 @@ export const downloadSummaryPdf = async (req: Request, res: Response) => {
         res.status(500).send('Não foi possível descarregar o PDF.');
     }
 };
+
+export const sendSummaryEmail = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const result = await saleswomanService.sendSummaryEmailToSaleswoman(id);
+        res.status(200).json(result);
+    } catch (error: any) {
+        if (error.statusCode) {
+            return res.status(error.statusCode).json({ error: error.message });
+        }
+        res.status(500).json({ error: 'Falha ao enviar o e-mail com o resumo.' });
+    }
+};

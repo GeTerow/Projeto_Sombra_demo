@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { notifyWorkerToProcessTask, notifyWorkerToAnalyzeTask } from '../lib/worker.client';
 import { sendSseEvent } from './sse.service';
 import { getAllConfigs } from './config.service';
+import fs from 'node:fs';
 
 export const createTask = async (clientName: string, saleswomanId: string, filePath: string): Promise<Task> => {
   const newTask = await prisma.task.create({
@@ -72,6 +73,49 @@ export const updateTask = async (taskId: string, data: Prisma.TaskUpdateInput): 
 
   sendSseEvent(updatedTask);
   return updatedTask;
+};
+
+export const deleteFailedTasks = async (): Promise<number> => {
+  const failedTasks = await prisma.task.findMany({
+    where: { status: 'FAILED' },
+  });
+
+  if (failedTasks.length === 0) {
+    console.log('[TaskService] No failed tasks to delete.');
+    return 0;
+  }
+
+  console.log(`[TaskService] Found ${failedTasks.length} failed tasks. Deleting associated files...`);
+
+  let deletedFiles = 0;
+  for (const task of failedTasks) {
+    if (task.audioFilePath && fs.existsSync(task.audioFilePath)) {
+      try {
+        fs.unlinkSync(task.audioFilePath);
+        deletedFiles++;
+      } catch (error) {
+        console.error(`[TaskService] Error deleting file ${task.audioFilePath}:`, error);
+      }
+    }
+  }
+  console.log(`[TaskService] Deleted ${deletedFiles} audio files.`);
+
+  const { count } = await prisma.task.deleteMany({
+    where: {
+      id: {
+        in: failedTasks.map((t) => t.id),
+      },
+    },
+  });
+
+  console.log(`[TaskService] Deleted ${count} failed tasks from the database.`);
+
+  // O frontend irá recarregar os dados, mas podemos notificar outros clientes.
+  // Como a função `sendSseEvent` espera um objeto Task, vamos enviar um evento genérico.
+  // Isso requer uma alteração no frontend para lidar com este tipo de evento.
+  // Por simplicidade, vamos pular o evento SSE por agora, já que o cliente que iniciou a ação irá recarregar.
+
+  return count;
 };
 
 // Busca os detalhes de uma tarefa

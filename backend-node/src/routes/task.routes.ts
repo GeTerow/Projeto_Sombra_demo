@@ -30,6 +30,9 @@ router.get('/:id/pdf', authenticateToken, taskController.getTaskPdf);
 // Rota para administradores limparem tarefas obsoletas
 router.post('/clear-stale', authenticateToken, authorizeAdmin, taskController.clearStaleTasks);
 
+// Rota para administradores apagarem tarefas com falha
+router.delete('/failed', authenticateToken, authorizeAdmin, taskController.deleteFailedTasks);
+
 // Rota para solicitar a análise de uma tarefa já transcrita
 router.post('/:id/analyze', authenticateToken, taskController.analyzeTask);
 

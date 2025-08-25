@@ -22,4 +22,7 @@ router.post('/:id/generate-summary-pdf', authenticateToken, saleswomanController
 // Rota para baixar o PDF de resumo.
 router.get('/:id/download-summary-pdf', authenticateToken, saleswomanController.downloadSummaryPdf);
 
+// Rota para enviar o resumo por e-mail.
+router.post('/:id/send-summary-email', authenticateToken, saleswomanController.sendSummaryEmail);
+
 export { router as saleswomenRouter };

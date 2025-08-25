@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { generateConsolidatedSummary } from '../lib/worker.client';
 import { generateSummaryPdf } from './pdf.service';
+import { sendSummaryEmail } from './email.service';
 
 const SUMMARIES_DIR = path.resolve(__dirname, '..', '..', 'uploads', 'summaries');
 fs.mkdirSync(SUMMARIES_DIR, { recursive: true });
@@ -163,4 +164,30 @@ export const getSummaryPdfPath = async (id: string) => {
     path: saleswoman.summaryPdfPath,
     name: `Resumo-${saleswoman.name.replace(/\s/g, '_')}.pdf`,
   };
+};
+
+export const sendSummaryEmailToSaleswoman = async (id: string) => {
+  const saleswoman = await prisma.saleswoman.findUnique({ where: { id } });
+
+  if (!saleswoman) {
+    const err = new Error('Vendedora não encontrada.');
+    (err as any).statusCode = 404;
+    throw err;
+  }
+
+  if (!saleswoman.email) {
+    const err = new Error('Vendedora não possui e-mail cadastrado.');
+    (err as any).statusCode = 400;
+    throw err;
+  }
+
+  if (!saleswoman.summaryPdfPath || !fs.existsSync(saleswoman.summaryPdfPath)) {
+    const err = new Error('Nenhum resumo em PDF encontrado para esta vendedora.');
+    (err as any).statusCode = 404;
+    throw err;
+  }
+
+  await sendSummaryEmail(saleswoman, saleswoman.summaryPdfPath);
+
+  return { message: `E-mail enviado com sucesso para ${saleswoman.name}.` };
 };

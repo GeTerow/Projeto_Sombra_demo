@@ -102,6 +102,20 @@ export const clearStaleTasks = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteFailedTasks = async (req: Request, res: Response) => {
+  try {
+    const count = await taskService.deleteFailedTasks();
+    if (count > 0) {
+      res.status(200).json({ message: `${count} tarefas com falha foram apagadas com sucesso.` });
+    } else {
+      res.status(200).json({ message: 'Nenhuma tarefa com falha encontrada para apagar.' });
+    }
+  } catch (error) {
+    console.error("[TaskController] Erro ao apagar tarefas com falha:", error);
+    res.status(500).json({ error: 'Falha ao apagar tarefas com falha.' });
+  }
+};
+
 // Controlador para gerar o PDF de análise da tarefa
 export const getTaskPdf = async (req: Request, res: Response) => {
   const { id } = req.params;
