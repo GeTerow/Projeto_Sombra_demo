@@ -49,6 +49,7 @@ export interface Saleswoman {
 }
 
 export interface Task {
+  subject: any;
   id: string;
   saleswomanId: string;
   saleswoman?: Saleswoman;

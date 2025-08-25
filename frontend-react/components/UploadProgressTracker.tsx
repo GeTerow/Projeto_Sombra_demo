@@ -11,26 +11,30 @@ interface UploadProgressTrackerProps {
     tasks: Task[];
     isConnected: boolean;
     isAdmin?: boolean;
+    onDataChanged: () => void;
 }
 
-export const UploadProgressTracker: React.FC<UploadProgressTrackerProps> = ({ tasks, isConnected, isAdmin }) => {
+export const UploadProgressTracker: React.FC<UploadProgressTrackerProps> = ({ tasks, isConnected, isAdmin, onDataChanged }) => {
     const [isCleaning, setIsCleaning] = useState(false);
     const [cleanupMessage, setCleanupMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-    const handleClearStaleTasks = async () => {
-        if (!window.confirm('Tem a certeza de que pretende forçar a limpeza de tarefas obsoletas? Esta ação irá marcar como "FALHADAS" as tarefas que estão em processamento há mais de uma hora.')) {
+    const handleDeleteFailedTasks = async () => {
+        if (!window.confirm('Tem a certeza de que pretende apagar permanentemente todos os áudios com falha? Esta ação não pode ser desfeita.')) {
             return;
         }
         setIsCleaning(true);
         setCleanupMessage(null);
         try {
-            const response = await api.post('/tasks/clear-stale');
+            const response = await api.delete('/tasks/failed');
             setCleanupMessage({ type: 'success', text: response.data.message });
+            onDataChanged(); // Força a atualização dos dados no painel
         } catch (error: any) {
-            const message = error.response?.data?.error || 'Ocorreu um erro desconhecido.';
+            const message = error.response?.data?.error || 'Ocorreu um erro desconhecido ao apagar as tarefas.';
             setCleanupMessage({ type: 'error', text: message });
         } finally {
             setIsCleaning(false);
+            // Esconde a mensagem após 5 segundos
+            setTimeout(() => setCleanupMessage(null), 5000);
         }
     };
 
@@ -42,13 +46,13 @@ export const UploadProgressTracker: React.FC<UploadProgressTrackerProps> = ({ ta
                 </h3>
                 {isAdmin && (
                     <button
-                        onClick={handleClearStaleTasks}
+                        onClick={handleDeleteFailedTasks}
                         disabled={isCleaning}
-                        className="p-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                        title="Forçar limpeza de tarefas obsoletas"
+                        className="p-2 text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        title="Apagar permanentemente todas as tarefas com falha"
                     >
                         {isCleaning ? <Spinner className="w-4 h-4" /> : <TrashIcon className="w-4 h-4" />}
-                        <span>Limpar</span>
+                        <span>Apagar Falhas</span>
                     </button>
                 )}
             </div>
