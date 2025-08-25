@@ -30,6 +30,7 @@ enum TaskStatus {
   TRANSCRIBING
   ALIGNING
   DIARIZING
+  TRANSCRIBED
   ANALYZING
   COMPLETED
   FAILED
@@ -44,7 +45,7 @@ model Saleswoman {
   summaryLastGeneratedAt  DateTime?
   summaryGenerationsToday Int        @default(0)
   summaryLastGenerationDate DateTime?
-
+  
   @@map("saleswomen")
 }
 
@@ -58,7 +59,7 @@ model Task {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   saleswomanId  String
-  saleswoman    Saleswoman @relation(fields: [saleswomanId], references: [id], onDelete: Cascade) // Adicionado onDelete: Cascade
+  saleswoman    Saleswoman @relation(fields: [saleswomanId], references: [id], onDelete: Cascade)
   includedInSummary Boolean @default(false)
   
   @@map("tasks")

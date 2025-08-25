@@ -1,10 +1,10 @@
 import React from 'react';
 import type { Task, TaskStatus } from '../types';
-import { CheckCircleIcon } from './icons/CheckCircleIcon'; // CORREÇÃO: Importado do local correto
+import { CheckCircleIcon } from './icons/CheckCircleIcon';
 
-// Ícones para os diferentes status
 const ClockIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
 const ExclamationCircleIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>;
+const TranscriptIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>; // Ícone para o estado Transcrito
 const ProcessingSpinner: React.FC = () => <div className="w-5 h-5 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>;
 
 
@@ -23,7 +23,9 @@ export const TaskProgressItem: React.FC<TaskProgressItemProps> = ({ task }) => {
             case 'ALIGNING':
                 return { icon: <ProcessingSpinner />, label: 'Alinhando', progress: '50%', bgColor: 'bg-sky-500' };
             case 'DIARIZING':
-                return { icon: <ProcessingSpinner />, label: 'Identificando falantes', progress: '75%', bgColor: 'bg-sky-500' };
+                return { icon: <ProcessingSpinner />, label: 'Identificando', progress: '75%', bgColor: 'bg-sky-500' };
+            case 'TRANSCRIBED': // NOVO ESTADO
+                return { icon: <TranscriptIcon className="w-5 h-5 text-blue-500" />, label: 'Transcrito', progress: '85%', bgColor: 'bg-blue-500' };
             case 'ANALYZING':
                 return { icon: <ProcessingSpinner />, label: 'Análise com IA', progress: '90%', bgColor: 'bg-indigo-500' };
             case 'COMPLETED':
@@ -32,7 +34,7 @@ export const TaskProgressItem: React.FC<TaskProgressItemProps> = ({ task }) => {
                 return { icon: <ExclamationCircleIcon className="w-5 h-5 text-rose-500" />, label: 'Falhou', progress: '100%', bgColor: 'bg-rose-500' };
             default:
                 const exhaustiveCheck: never = task.status;
-                return { icon: <ExclamationCircleIcon className="w-5 h-5 text-rose-500" />, label: 'Status Desconhecido', progress: '100%', bgColor: 'bg-rose-500' };
+                return { icon: <ExclamationCircleIcon className="w-5 h-5 text-rose-500" />, label: 'Desconhecido', progress: '100%', bgColor: 'bg-rose-500' };
         }
     };
 
@@ -40,6 +42,7 @@ export const TaskProgressItem: React.FC<TaskProgressItemProps> = ({ task }) => {
     
     const statusColor = task.status === 'COMPLETED' ? 'text-emerald-600 dark:text-emerald-400' :
                         task.status === 'FAILED' ? 'text-rose-600 dark:text-rose-400' :
+                        task.status === 'TRANSCRIBED' ? 'text-blue-600 dark:text-blue-400' : // Cor para o novo estado
                         'text-slate-500 dark:text-slate-400';
 
 
@@ -61,7 +64,7 @@ export const TaskProgressItem: React.FC<TaskProgressItemProps> = ({ task }) => {
             </div>
             <div className="mt-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
                 <div 
-                    className={`h-1.5 rounded-full ${bgColor} transition-all duration-500 ease-out ${!['COMPLETED', 'FAILED'].includes(task.status) ? 'animate-pulse' : ''}`} 
+                    className={`h-1.5 rounded-full ${bgColor} transition-all duration-500 ease-out ${!['COMPLETED', 'FAILED', 'TRANSCRIBED'].includes(task.status) ? 'animate-pulse' : ''}`} 
                     style={{ width: progress }}
                 ></div>
             </div>

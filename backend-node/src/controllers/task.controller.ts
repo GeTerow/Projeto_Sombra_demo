@@ -84,12 +84,22 @@ export const getTaskAudio = async (req: Request, res: Response) => {
     }
 };
 
-export const streamTaskEvents = (req: Request, res: Response) => {
-  const clientId = sseService.addSseClient(res);
+export const streamTaskEvents = async (req: Request, res: Response) => {
+  const clientId = await sseService.addSseClient(res);
   
   req.on('close', () => {
     sseService.removeSseClient(clientId);
   });
+};
+
+export const clearStaleTasks = async (req: Request, res: Response) => {
+  try {
+    await taskService.failStaleTasks();
+    res.status(200).json({ message: 'A limpeza de tarefas obsoletas foi concluída.' });
+  } catch (error) {
+    console.error("[TaskController] Erro ao limpar tarefas obsoletas:", error);
+    res.status(500).json({ error: 'Falha ao limpar tarefas obsoletas.' });
+  }
 };
 
 // Controlador para gerar o PDF de análise da tarefa
@@ -116,5 +126,16 @@ export const getTaskPdf = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Erro ao gerar PDF da tarefa:', error);
     res.status(500).send('Não foi possível gerar o PDF.');
+  }
+};
+
+export const analyzeTask = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const task = await taskService.requestAnalysis(id);
+    res.status(202).json({ message: 'Solicitação de análise recebida.', task });
+  } catch (error: any) {
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ error: error.message || 'Falha ao solicitar a análise da tarefa.' });
   }
 };

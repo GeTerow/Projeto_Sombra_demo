@@ -189,23 +189,22 @@ def run_openai_assistant(vtt_content: str, api_key: str, assistant_id: str, max_
     return analysis_json
 
 
-# --- Tarefa Celery Modificada ---
 @celery_app.task(name="process_audio_task")
 def process_audio_task(task_id: str, audio_path: str, config: Dict[str, Any]):
-    """Pipeline que utiliza o objeto de configuração recebido."""
-    logger.info(f"[Worker Celery] Iniciando processamento | task_id={task_id}")
+    """
+    Pipeline que agora realiza APENAS a transcrição, alinhamento e diarização.
+    """
+    logger.info(f"[Worker Celery] Iniciando TRANSCRIÇÃO | task_id={task_id}")
     webhook_url = f"{NODE_BACKEND_URL}/api/v1/tasks/{task_id}/complete"
     
-    openai_api_key = config.get("OPENAI_API_KEY")
     hf_token = config.get("HF_TOKEN")
-    openai_assistant_id = config.get("OPENAI_ASSISTANT_ID")
     whisperx_model_name = config.get("WHISPERX_MODEL", "large-v3")
     diar_device = config.get("DIAR_DEVICE", "cpu")
     align_device = config.get("ALIGN_DEVICE", "cpu")
     process_device = "cuda" if DEVICE == "cuda" else "cpu"
 
-    if not all([openai_api_key, hf_token, openai_assistant_id]):
-        error_message = "Configuração incompleta: Chaves de API ou ID do assistente não foram fornecidos."
+    if not all([hf_token]):
+        error_message = "Configuração incompleta: HF_TOKEN não foi fornecido."
         logger.error(error_message)
         notify_backend(webhook_url, {"status": "FAILED", "analysis": {"error": error_message}})
         return
@@ -245,35 +244,29 @@ def process_audio_task(task_id: str, audio_path: str, config: Dict[str, Any]):
             
             logger.info("Etapa 4: Atribuindo locutores...")
             result_with_speakers = whisperx.assign_word_speakers(diarize_segments, result_aligned)
-            
             result_with_speakers["language"] = language_code
-            
             if process_device == "cuda": torch.cuda.empty_cache()
 
             logger.info("Etapa 5: Gerando VTT...")
             vtt_content = generate_vtt(result_with_speakers, audio_path)
 
-        logger.info("Etapa 6: Enviando transcrição ao OpenAI Assistant...")
-        notify_backend(webhook_url, {"status": "ANALYZING"})
-        analysis_result_json = run_openai_assistant(vtt_content, openai_api_key, openai_assistant_id)
-
         payload = {
-            "status": "COMPLETED",
+            "status": "TRANSCRIBED",
             "transcription": vtt_content,
-            "analysis": json.dumps(analysis_result_json, ensure_ascii=False),
+            "analysis": None
         }
-        logger.info(f"Enviando webhook de sucesso para: {webhook_url}")
+        logger.info(f"Enviando webhook de transcrição concluída para: {webhook_url}")
         notify_backend(webhook_url, payload)
 
     except Exception as e:
         full_traceback = traceback.format_exc()
-        error_message = f"Erro ao processar a tarefa {task_id}: {e}"
+        error_message = f"Erro ao transcrever a tarefa {task_id}: {e}"
         logger.error(error_message)
         logger.error("Stack Trace completo:\n" + full_traceback)
         notify_backend(webhook_url, {"status": "FAILED", "analysis": {"error": error_message, "traceback": full_traceback}})
 
     finally:
-        logger.info(f"[Worker Celery] Limpando memória para a tarefa {task_id}...")
+        logger.info(f"[Worker Celery] Limpando memória para a tarefa de transcrição {task_id}...")
         if audio is not None: del audio
         if result_transcribe is not None: del result_transcribe
         if result_aligned is not None: del result_aligned
@@ -283,4 +276,41 @@ def process_audio_task(task_id: str, audio_path: str, config: Dict[str, Any]):
         gc.collect()
         if process_device == "cuda" and torch.cuda.is_available():
             torch.cuda.empty_cache()
-        logger.info(f"[Worker Celery] Finalizado processamento | task_id={task_id}")
+        logger.info(f"[Worker Celery] Finalizado processamento de transcrição | task_id={task_id}")
+
+@celery_app.task(name="analyze_task")
+def analyze_task(task_id: str, transcription: str, config: Dict[str, Any]):
+    """
+    NOVA TAREFA: Recebe uma transcrição e realiza apenas a análise com IA.
+    """
+    logger.info(f"[Worker Celery] Iniciando ANÁLISE DE IA | task_id={task_id}")
+    webhook_url = f"{NODE_BACKEND_URL}/api/v1/tasks/{task_id}/complete"
+    
+    openai_api_key = config.get("OPENAI_API_KEY")
+    openai_assistant_id = config.get("OPENAI_ASSISTANT_ID")
+
+    if not all([openai_api_key, openai_assistant_id]):
+        error_message = "Configuração incompleta para análise: Chave da API OpenAI ou ID do assistente ausentes."
+        logger.error(error_message)
+        notify_backend(webhook_url, {"status": "FAILED", "analysis": {"error": error_message}})
+        return
+    
+    try:
+        logger.info("Etapa 1: Enviando transcrição ao OpenAI Assistant...")
+        analysis_result_json = run_openai_assistant(transcription, openai_api_key, openai_assistant_id)
+
+        payload = {
+            "status": "COMPLETED",
+            "analysis": json.dumps(analysis_result_json, ensure_ascii=False),
+        }
+        logger.info(f"Enviando webhook de ANÁLISE concluída para: {webhook_url}")
+        notify_backend(webhook_url, payload)
+
+    except Exception as e:
+        full_traceback = traceback.format_exc()
+        error_message = f"Erro ao analisar a tarefa {task_id}: {e}"
+        logger.error(error_message)
+        logger.error("Stack Trace completo:\n" + full_traceback)
+        notify_backend(webhook_url, {"status": "FAILED", "analysis": {"error": error_message, "traceback": full_traceback}})
+    finally:
+        logger.info(f"[Worker Celery] Finalizado processamento de análise | task_id={task_id}")

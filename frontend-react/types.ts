@@ -1,4 +1,4 @@
-export type TaskStatus = 'PENDING' | 'TRANSCRIBING' | 'ALIGNING' | 'DIARIZING' | 'ANALYZING' | 'COMPLETED' | 'FAILED';
+export type TaskStatus = 'PENDING' | 'TRANSCRIBING' | 'ALIGNING' | 'DIARIZING' | 'TRANSCRIBED' | 'ANALYZING' | 'COMPLETED' | 'FAILED';
 
 
 // Sub-tipo para cada estágio da performance

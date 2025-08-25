@@ -4,11 +4,7 @@ import type { Task } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { API_URL } from '../config';
 import { FormattedTranscription } from './FormattedTranscription';
-
-interface AnalysisDetailPageProps {
-  callId: string;
-  onBack: () => void;
-}
+import { Spinner } from './Spinner'; // Importando o Spinner
 
 /* Ícones (reutilizados do seu código) */
 const DocumentArrowDownIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -39,12 +35,15 @@ const WrenchIcon: React.FC<{ className?: string }> = ({ className }) => <svg xml
 const RocketIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.82m5.84-2.56a14.98 14.98 0 00-5.84-2.56m0 0a14.98 14.98 0 00-2.56-5.84m2.56 5.84V21M11.03 7.03v2.88m2.88-2.88h-2.88m-3.449 2.56a14.98 14.98 0 00-2.56 5.84m2.56-5.84V4.5a14.982 14.982 0 00-5.84 2.56M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
 const ClipboardIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-1.125 0-2.062.914-2.062 2.063v7.625c0 1.148.937 2.063 2.063 2.063h8.25c1.125 0 2.063-.914 2.063-2.063v-7.625a2.063 2.063 0 00-2.063-2.063H8.25z" /></svg>;
 
-/* Tipos atualizados para cobrir todo o JSON fornecido */
+interface AnalysisDetailPageProps {
+  callId: string;
+  onBack: () => void;
+}
+
 type StageKey = 'opening' | 'discovery' | 'qualification' | 'closing';
 interface StageData { score: number; feedback: string; improvementSuggestion: string; }
 interface Performance { overallScore: number; stages: Record<StageKey, StageData>; }
 interface ImprovementPoint { salespersonLine: string; context: string; whatWentWrong?: string; impact?: string; suggestion: string; }
-// ALTERADO: Adicionado speakerMapping à interface NewAnalysis
 interface NewAnalysis {
   summary: string;
   speakerMapping: Record<string, string>;
@@ -53,12 +52,11 @@ interface NewAnalysis {
   improvementPoints: ImprovementPoint[];
 }
 
-// ALTERADO: Adicionado a verificação de speakerMapping
 const isNewAnalysis = (a: any): a is NewAnalysis => {
   return (
     a && typeof a === 'object' &&
     'summary' in a &&
-    'speakerMapping' in a && // Verificação adicionada
+    'speakerMapping' in a && 
     'customerProfile' in a &&
     a.customerProfile && 'name' in a.customerProfile &&
     'performance' in a &&
@@ -68,7 +66,6 @@ const isNewAnalysis = (a: any): a is NewAnalysis => {
 };
 
 /* MOCK atualizado para desenvolvimento */
-// ALTERADO: Adicionado speakerMapping ao mock
 const MOCK_ANALYSIS: NewAnalysis = {
   summary: "A chamada consistiu em um atendimento de venda recorrente, onde a cliente solicitou um novo pedido de papel toalha. A vendedora conduziu o processo de forma organizada, confirmou dados cadastrais, valores, condições de pagamento e entrega. O pedido foi finalizado conforme solicitado, demonstrando cordialidade, mas sem explorar oportunidades de venda adicional.",
   speakerMapping: {
@@ -131,9 +128,6 @@ const ScoreRing: React.FC<{ scorePercent: number; label?: string; size?: number;
   );
 };
 
-// =====================================================================================
-// COMPONENTE PRINCIPAL REESTRUTURADO (exibe todos os campos do JSON)
-// =====================================================================================
 const NewAnalysisContent: React.FC<{ analysis: NewAnalysis; onCopy: (text: string, type: string) => void; copied: string | null }> = ({ analysis, onCopy, copied }) => {
   const overallPercent = useMemo(() => {
     const s = analysis.performance.overallScore;
@@ -147,7 +141,6 @@ const NewAnalysisContent: React.FC<{ analysis: NewAnalysis; onCopy: (text: strin
 
   return (
     <div className="space-y-12">
-      {/* Resumo */}
       <section>
         <h3 className="font-semibold text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-3"><ClipboardIcon className="w-5 h-5 text-cyan-500" /> Resumo da Ligação</h3>
         <div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-white/90 to-slate-50/70 dark:from-slate-900/60 dark:to-slate-800/50 p-5">
@@ -159,7 +152,6 @@ const NewAnalysisContent: React.FC<{ analysis: NewAnalysis; onCopy: (text: strin
         </div>
       </section>
 
-      {/* Performance */}
       <section id="detalhes-performance">
         <h3 className="font-semibold text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-4"><RocketIcon className="w-5 h-5 text-emerald-500" /> Análise de Performance</h3>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -204,7 +196,6 @@ const NewAnalysisContent: React.FC<{ analysis: NewAnalysis; onCopy: (text: strin
         </div>
       </section>
       
-      {/* ADICIONADO: Seção para exibir o speakerMapping */}
       <section>
         <h3 className="font-semibold text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-3"><ChatBubbleIcon className="w-5 h-5 text-sky-500" /> Identificação dos Participantes</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -217,7 +208,6 @@ const NewAnalysisContent: React.FC<{ analysis: NewAnalysis; onCopy: (text: strin
         </div>
       </section>
 
-      {/* Perfil do Cliente */}
       <section>
         <h3 className="font-semibold text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-3"><UserIcon className="w-5 h-5 text-indigo-500" /> Perfil do Cliente</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -236,7 +226,6 @@ const NewAnalysisContent: React.FC<{ analysis: NewAnalysis; onCopy: (text: strin
         </div>
       </section>
 
-      {/* Pontos de Melhoria (com detalhes adicionais do JSON) */}
       <section id="pontos-melhoria">
         <h3 className="font-semibold text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-3"><WrenchIcon className="w-5 h-5 text-rose-500" /> Pontos de Melhoria</h3>
         <div className="space-y-4">
@@ -246,18 +235,14 @@ const NewAnalysisContent: React.FC<{ analysis: NewAnalysis; onCopy: (text: strin
                 <div className="space-y-2 text-sm flex-1">
                   <p className="italic text-slate-500 dark:text-slate-400 border-l-4 border-slate-300 dark:border-slate-600 pl-3">“{item.salespersonLine}”</p>
                   <p className="flex items-start gap-2 text-slate-700 dark:text-slate-300"><ChatBubbleIcon className="w-4 h-4 mt-0.5 text-sky-500 flex-shrink-0" /><span><strong className="text-slate-900 dark:text-white">Contexto:</strong> {item.context}</span></p>
-
                   {item.whatWentWrong && (
                     <p className="flex items-start gap-2 text-slate-700 dark:text-slate-300"><svg className="w-4 h-4 mt-0.5 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4m0 4h.01" /></svg><span><strong className="text-slate-900 dark:text-white">O que deu errado:</strong> {item.whatWentWrong}</span></p>
                   )}
-
                   {item.impact && (
                     <p className="text-sm text-slate-600 dark:text-slate-400"><strong>Impacto:</strong> {item.impact}</p>
                   )}
-
                   <p className="flex items-start gap-2 text-slate-700 dark:text-slate-300"><LightbulbIcon className="w-4 h-4 mt-0.5 text-amber-500 flex-shrink-0" /><span><strong className="text-slate-900 dark:text-white">Sugestão (o que deveria ter sido feito):</strong> {item.suggestion}</span></p>
                 </div>
-
                 <div className="flex flex-col gap-2 items-end">
                   <button onClick={() => onCopy(item.suggestion, `sug-${idx}`)} className="self-start inline-flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Copiar sugestão">{copied === `sug-${idx}` ? <CheckIcon className="w-4 h-4 text-emerald-500" /> : <CopyIcon className="w-4 h-4" />}{copied === `sug-${idx}` ? 'Copiado!' : 'Copiar'}</button>
                   <button onClick={() => onCopy(`${item.salespersonLine}\nContexto: ${item.context}\nO que deu errado: ${item.whatWentWrong || '-'}\nImpacto: ${item.impact || '-'}\nSugestão: ${item.suggestion}`, `card-${idx}`)} className="text-xs px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-700 transition">Copiar card</button>
@@ -271,24 +256,51 @@ const NewAnalysisContent: React.FC<{ analysis: NewAnalysis; onCopy: (text: strin
   );
 };
 
-// =====================================================================================
-// PÁGINA PRINCIPAL (consome a analysis retornada pela API)
-// =====================================================================================
+
 export const AnalysisDetailPage: React.FC<AnalysisDetailPageProps> = ({ callId, onBack }) => {
   const [call, setCall] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'resumo' | 'analiseDetalhada'>('resumo');
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
-    setIsLoading(true);
-    api 
-      .get<Task>(`/tasks/${callId}`)
-      .then((response) => setCall(response.data))
-      .catch(() => setError('Não foi possível carregar os detalhes da análise.'))
-      .finally(() => setIsLoading(false));
+    const fetchTask = () => {
+      // Não precisa setar loading aqui, pois o SSE vai atualizar
+      api
+        .get<Task>(`/tasks/${callId}`)
+        .then((response) => setCall(response.data))
+        .catch(() => setError('Não foi possível carregar os detalhes da análise.'))
+        .finally(() => setIsLoading(false));
+    };
+
+    fetchTask();
+
+    const eventSource = new EventSource(`${API_URL}/tasks/stream?token=${localStorage.getItem('authToken')}`);
+    eventSource.onmessage = (event) => {
+        try {
+            const updatedTask = JSON.parse(event.data) as Task;
+            if (updatedTask.id === callId) {
+                setCall(updatedTask); // Apenas atualiza o estado com a nova task
+            }
+        } catch (e) {
+            console.error("Falha ao processar evento SSE:", e);
+        }
+    };
+    
+    return () => eventSource.close();
   }, [callId]);
+
+  const handleRequestAnalysis = async () => {
+    if (!call) return;
+    // Não precisa mais do estado isAnalyzing
+    setError(null);
+    try {
+      // A UI vai mudar automaticamente quando o evento SSE com status 'ANALYZING' chegar
+      await api.post(`/tasks/${call.id}/analyze`);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Falha ao iniciar a análise.');
+    }
+  };
 
   const handleCopy = useCallback(async (text: string, type: string) => {
     try {
@@ -313,14 +325,18 @@ export const AnalysisDetailPage: React.FC<AnalysisDetailPageProps> = ({ callId, 
   };
 
   const dateFormatted = useMemo(() => call?.createdAt ? new Date(call.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : '', [call?.createdAt]);
-
-  const analysisData: NewAnalysis = useMemo(() => {
+  
+  const analysisData: any = useMemo(() => {
     const raw = (call as any)?.analysis;
-    return isNewAnalysis(raw) ? raw : MOCK_ANALYSIS;
+    return isNewAnalysis(raw) ? raw : null;
   }, [call]);
 
   if (isLoading) return <div className="text-center p-8">Carregando análise...</div>;
-  if (error || !call) return <div className="text-center p-8 text-red-500">{error || 'Análise não encontrada.'}</div>;
+  if (!call) return <div className="text-center p-8 text-red-500">{error || 'Análise não encontrada.'}</div>;
+
+  const canAnalyze = call.status === 'TRANSCRIBED' || call.status === 'FAILED';
+  const isAnalyzing = call.status === 'ANALYZING';
+  const showAnalysis = call.status === 'COMPLETED' && analysisData;
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-8">
@@ -343,28 +359,39 @@ export const AnalysisDetailPage: React.FC<AnalysisDetailPageProps> = ({ callId, 
           </header>
 
           <div className="mt-6">
-            <div className="inline-flex p-1 bg-slate-100/80 dark:bg-slate-800/70 rounded-xl ring-1 ring-slate-200/60 dark:ring-slate-700/50">
-              {(['resumo', 'analiseDetalhada'] as const).map((tab) => (
-                <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2 text-sm font-medium rounded-lg transition ${activeTab === tab ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>
-                  {tab === 'resumo' ? 'Resumo e Transcrição' : 'Análise Detalhada'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-6">
-            {activeTab === 'analiseDetalhada' && (<NewAnalysisContent analysis={analysisData} onCopy={handleCopy} copied={copied} />)}
-
-            {activeTab === 'resumo' && (
+            {showAnalysis ? (
+              <NewAnalysisContent analysis={analysisData} onCopy={handleCopy} copied={copied} />
+            ) : (
               <section>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <h3 className="font-semibold text-lg text-slate-900 dark:text-white mb-3">Áudio da Ligação</h3>
                     <audio controls className="w-full"><source src={`${API_URL}/tasks/${call.id}/audio?token=${localStorage.getItem('authToken')}`} type="audio/mpeg" />Seu navegador não suporta o elemento de áudio.</audio>
-                    <div className="mt-4">
-                      <h3 className="font-semibold text-lg text-slate-900 dark:text-white mb-3">Resumo da Conversa</h3>
-                      <p className="text-sm text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/70 p-4 rounded-lg border border-slate-200 dark:border-slate-700">{analysisData.summary}</p>
+                    
+                    <div className="mt-6 p-4 rounded-lg bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700">
+                      <h3 className="font-semibold text-lg text-slate-900 dark:text-white mb-2">Análise por IA</h3>
+                      {canAnalyze && (
+                        <>
+                          <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
+                            {call.status === 'FAILED' ? 'A tentativa anterior de análise falhou.' : 'A transcrição está pronta.'} Clique para gerar a análise de performance.
+                          </p>
+                          <button onClick={handleRequestAnalysis} className="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700">
+                            <LightbulbIcon className="w-5 h-5" />
+                            {call.status === 'FAILED' ? 'Tentar Análise Novamente' : 'Analisar com IA'}
+                          </button>
+                        </>
+                      )}
+
+                      {isAnalyzing && (
+                        <div className="flex items-center gap-3 text-sm text-indigo-600 dark:text-indigo-400">
+                          <Spinner/>
+                          <span>A IA está analisando. A página será atualizada automaticamente.</span>
+                        </div>
+                      )}
+
+                      {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
                     </div>
+
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-3">

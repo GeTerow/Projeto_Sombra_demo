@@ -4,6 +4,7 @@ import { prisma } from './lib/prisma';
 import { sendSummaryEmail } from './services/email.service';
 import * as saleswomanService from './services/saleswoman.service';
 import { getAllConfigs } from './services/config.service';
+import { failStaleTasks } from './services/task.service';
 
 let scheduledTask: cron.ScheduledTask;
 
@@ -61,4 +62,14 @@ export const startOrRestartScheduler = async () => {
     scheduledTask = cron.schedule('0 8 * * *', processSummariesByVolume, { timezone: "America/Sao_Paulo" });
     console.error(`[Scheduler] Padrão de agendamento inválido: "${schedulePattern}". Usando o padrão '0 8 * * *'.`);
   }
+};
+
+export const startStaleTaskCleanupJob = () => {
+  const schedulePattern = '*/30 * * * *'; // A cada 30 minutos
+  cron.schedule(schedulePattern, () => {
+    console.log('[Scheduler] Executando a verificação de tarefas obsoletas...');
+    failStaleTasks();
+  }, { timezone: "America/Sao_Paulo" });
+
+  console.log(`[Scheduler] Verificação de tarefas obsoletas agendada para rodar a cada 30 minutos.`);
 };

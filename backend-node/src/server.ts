@@ -1,5 +1,5 @@
 import { app } from './app';
-import { startOrRestartScheduler } from './scheduler';
+import { startOrRestartScheduler, startStaleTaskCleanupJob } from './scheduler';
 
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
@@ -10,6 +10,7 @@ const startServer = () => {
             console.log(`Acesse http://localhost:${PORT}`);
             
             startOrRestartScheduler();
+            startStaleTaskCleanupJob();
         });
     } catch (error) {
         console.error("Não foi possível iniciar o servidor:", error);

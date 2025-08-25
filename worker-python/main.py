@@ -12,7 +12,7 @@ from celery.exceptions import CeleryError
 
 load_dotenv()
 
-from tasks import process_audio_task
+from tasks import process_audio_task, analyze_task 
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -28,7 +28,10 @@ class GenerateSummaryRequest(BaseModel):
     transcriptions: List[str]
     openai_api_key: str
 
-
+class AnalyzeTaskRequest(BaseModel):
+    task_id: str
+    transcription: str
+    config: Dict[str, Any]
 # --- API (FastAPI) ---
 app = FastAPI(title="API de Análise de Áudio", version="2.0.0")
 
@@ -60,7 +63,6 @@ async def process_task_endpoint(raw_request: Request): # ASSINATURA ALTERADA
     """
     # 1. Logar o corpo bruto da requisição
     body = await raw_request.json()
-    print(f"[API FastAPI] CORPO DA REQUISIÇÃO RECEBIDO: {body}")
 
     # 2. Tentar validar manualmente com o Pydantic
     try:
@@ -87,6 +89,17 @@ async def process_task_endpoint(raw_request: Request): # ASSINATURA ALTERADA
         print(f"[API FastAPI] ERRO CRÍTICO: {error_detail}")
         raise HTTPException(status_code=500, detail=error_detail)
 
+@app.post("/analyze-task", status_code=202)
+async def analyze_task_endpoint(request: AnalyzeTaskRequest):
+
+    try:
+        print(f"[API FastAPI] Tarefa de ANÁLISE recebida: {request.task_id}. Enviando para a fila do Celery.")
+        analyze_task.delay(request.task_id, request.transcription, request.config)
+        return {"message": "Tarefa de análise aceita e enfileirada para execução."}
+    except Exception as e:
+        error_detail = f"Falha ao enfileirar a tarefa de análise no Celery. Erro: {str(e)}"
+        print(f"[API FastAPI] ERRO CRÍTICO: {error_detail}")
+        raise HTTPException(status_code=500, detail=error_detail)
 
 @app.post("/generate-summary")
 def generate_summary(request: GenerateSummaryRequest):
@@ -131,7 +144,7 @@ def generate_summary(request: GenerateSummaryRequest):
     
     try:
         response = client.chat.completions.create(
-            model="gpt-5-nano-2025-08-07",
+            model="gpt-5-mini-2025-08-07",
             messages=[
                 {"role": "system", "content": "Você é um gerente de vendas sênior elaborando um feedback de desempenho."},
                 {"role": "user", "content": prompt}

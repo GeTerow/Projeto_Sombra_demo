@@ -28,5 +28,5 @@ celery_app.conf.update(
     task_reject_on_worker_lost=True,
 
     # Opcional: reciclar worker para evitar fragmentação (especialmente em CUDA)
-    worker_max_tasks_per_child=int(os.getenv('CELERY_MAX_TASKS_PER_CHILD', '20')),
+    worker_max_tasks_per_child=int(os.getenv('CELERY_MAX_TASKS_PER_CHILD', '10')),
 )

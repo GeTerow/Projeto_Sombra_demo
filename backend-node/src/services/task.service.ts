@@ -1,6 +1,6 @@
-import { Prisma, Task, Saleswoman } from '@prisma/client';
+import { Prisma, Task, Saleswoman, TaskStatus } from '@prisma/client';
 import { prisma } from '../lib/prisma';
-import { notifyWorkerToProcessTask } from '../lib/worker.client';
+import { notifyWorkerToProcessTask, notifyWorkerToAnalyzeTask } from '../lib/worker.client';
 import { sendSseEvent } from './sse.service';
 import { getAllConfigs } from './config.service';
 
@@ -30,7 +30,6 @@ export const createTask = async (clientName: string, saleswomanId: string, fileP
       ALIGN_DEVICE: allConfigs.ALIGN_DEVICE
     };
 
-    // --- LOG DE DEPURAÇÃO ADICIONADO ---
     console.log(`[TaskService] Enviando para o worker. Task ID: ${newTask.id}, FilePath: ${filePath}`);
     
     await notifyWorkerToProcessTask(newTask.id, filePath, workerConfig);
@@ -87,17 +86,118 @@ export const getTasksBySaleswoman = async (saleswomanId: string): Promise<Task[]
   return prisma.task.findMany({
     where: {
       saleswomanId,
-      status: 'COMPLETED',
-      analysis: { not: Prisma.JsonNull },
+      status: {
+        in: ['TRANSCRIBED', 'ANALYZING', 'COMPLETED', 'FAILED']
+      }
     },
     orderBy: { createdAt: 'desc' },
   });
 };
-
 export const getTaskAudioPath = async (taskId: string): Promise<string | null> => {
     const task = await prisma.task.findUnique({
         where: { id: taskId },
         select: { audioFilePath: true }
     });
     return task?.audioFilePath ?? null;
+};
+
+export const getActiveTasks = async (): Promise<Task[]> => {
+  return prisma.task.findMany({
+    where: {
+      status: {
+        notIn: ['COMPLETED', 'FAILED'],
+      },
+    },
+    include: { saleswoman: true },
+    orderBy: { createdAt: 'asc' },
+  });
+};
+
+export const failStaleTasks = async (timeoutMinutes: number = 60): Promise<void> => {
+  const timeout = new Date();
+  timeout.setMinutes(timeout.getMinutes() - timeoutMinutes);
+
+  const staleTasks = await prisma.task.findMany({
+    where: {
+      status: {
+        in: ['PENDING', 'TRANSCRIBING', 'ALIGNING', 'DIARIZING', 'ANALYZING'],
+      },
+      updatedAt: {
+        lt: timeout,
+      },
+    },
+  });
+
+  if (staleTasks.length > 0) {
+    console.log(`[Scheduler] Encontradas ${staleTasks.length} tarefas obsoletas. A marcá-las como FAILED...`);
+    for (const task of staleTasks) {
+      const updatedTask = await prisma.task.update({
+        where: { id: task.id },
+        data: { 
+          status: 'FAILED',
+          analysis: {
+            ...(task.analysis as Prisma.JsonObject || {}),
+            error: `A tarefa excedeu o tempo limite de ${timeoutMinutes} minutos e foi marcada como falhada.`,
+          }
+        },
+        include: { saleswoman: true },
+      });
+      sendSseEvent(updatedTask);
+    }
+    console.log(`[Scheduler] ${staleTasks.length} tarefas obsoletas foram atualizadas para FAILED.`);
+  } else {
+    console.log('[Scheduler] Nenhuma tarefa obsoleta encontrada.');
+  }
+};
+
+export const requestAnalysis = async (taskId: string): Promise<Task> => {
+  const task = await prisma.task.findUnique({ where: { id: taskId } });
+
+  if (!task) {
+    const err = new Error('Tarefa não encontrada.');
+    (err as any).statusCode = 404;
+    throw err;
+  }
+
+  if (task.status !== TaskStatus.TRANSCRIBED) {
+    const err = new Error('A tarefa não está no estado correto para iniciar a análise. O status atual é: ' + task.status);
+    (err as any).statusCode = 409;
+    throw err;
+  }
+
+  if (!task.transcription) {
+    const err = new Error('Não há transcrição disponível para esta tarefa.');
+    (err as any).statusCode = 400;
+    throw err;
+  }
+
+  // Atualiza o status para ANALYZING e notifica o frontend via SSE
+  const updatedTask = await prisma.task.update({
+    where: { id: taskId },
+    data: { status: 'ANALYZING' },
+    include: { saleswoman: true },
+  });
+  sendSseEvent(updatedTask);
+
+  // Notifica o worker para iniciar a análise
+  try {
+    const allConfigs = await getAllConfigs();
+    const workerConfig = {
+      OPENAI_API_KEY: allConfigs.OPENAI_API_KEY,
+      OPENAI_ASSISTANT_ID: allConfigs.OPENAI_ASSISTANT_ID,
+    };
+    
+    // Passa a transcrição existente para o worker
+    await notifyWorkerToAnalyzeTask(taskId, task.transcription, workerConfig);
+  } catch (error) {
+    console.error(`[TaskService] Falha ao notificar worker para análise, revertendo status para FAILED.`);
+    const failedTask = await prisma.task.update({
+      where: { id: taskId },
+      data: { status: 'FAILED' },
+      include: { saleswoman: true },
+    });
+    sendSseEvent(failedTask);
+  }
+
+  return updatedTask;
 };
