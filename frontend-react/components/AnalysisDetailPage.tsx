@@ -4,9 +4,9 @@ import type { Task } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { API_URL } from '../config';
 import { FormattedTranscription } from './FormattedTranscription';
-import { Spinner } from './Spinner'; // Importando o Spinner
+import { Spinner } from './Spinner';
 
-/* Ícones (reutilizados do seu código) */
+/* Ícones */
 const DocumentArrowDownIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
@@ -65,31 +65,7 @@ const isNewAnalysis = (a: any): a is NewAnalysis => {
   );
 };
 
-/* MOCK atualizado para desenvolvimento */
-const MOCK_ANALYSIS: NewAnalysis = {
-  summary: "A chamada consistiu em um atendimento de venda recorrente, onde a cliente solicitou um novo pedido de papel toalha. A vendedora conduziu o processo de forma organizada, confirmou dados cadastrais, valores, condições de pagamento e entrega. O pedido foi finalizado conforme solicitado, demonstrando cordialidade, mas sem explorar oportunidades de venda adicional.",
-  speakerMapping: {
-    "SPEAKER_01": "Vendedora",
-    "SPEAKER_02": "Cliente"
-  },
-  customerProfile: { name: "Não informado", profile: "Compradora recorrente, provavelmente responsável por compras de suprimentos.", communicationStyle: "Direto e objetivo" },
-  performance: {
-    overallScore: 74,
-    stages: {
-      opening: { score: 70, feedback: "A vendedora cumprimentou a cliente de forma cordial e confirmou prontamente se era cliente cadastrada. Demonstrou cordialidade, porém faltou personalização, não se apresentou nem utilizou o nome do cliente.", improvementSuggestion: "Apresentar-se no início da ligação e, caso possível, utilizar o nome do cliente para maior proximidade." },
-      discovery: { score: 65, feedback: "A vendedora ouviu a solicitação do produto, confirmou se era o mesmo usualmente comprado e foi ágil na busca de informações. Contudo, não explorou as necessidades atuais, satisfação ou interesse por outros produtos.", improvementSuggestion: "Fazer perguntas abertas sobre a satisfação com o produto ou identificar necessidades adicionais, demonstrando proatividade e interesse genuíno." },
-      qualification: { score: 80, feedback: "Foi eficiente na confirmação de dados como CNPJ, endereço de entrega, quantidade do pedido, histórico e condições de pagamento. Demonstrou atenção ao histórico e facilitou o processo para a cliente.", improvementSuggestion: "Manter a conferência de dados, mas aprofundar-se, por exemplo, oferecendo alternativas de pagamento ou condições especiais pautadas no histórico de compras." },
-      closing: { score: 80, feedback: "Finalizou com clareza o processo do pedido, confirmou informações, antecipou a possibilidade de entrega rápida e manteve cordialidade durante o fechamento. Respondeu perguntas de forma objetiva.", improvementSuggestion: "Reforçar agradecimento pela preferência e sugerir contato futuro para novas demandas, buscando fidelizar ainda mais o relacionamento." }
-    }
-  },
-  improvementPoints: [
-    { salespersonLine: "Está abrindo aqui já.", context: "Momento inicial em que a vendedora busca o cadastro do cliente após confirmação de CNPJ.", whatWentWrong: "A resposta foi objetiva, porém pouco engajadora e transmitiu certa impessoalidade.", impact: "Passa uma imagem de atendimento rotineiro sem personalização, o que pode não fortalecer o relacionamento.", suggestion: "Utilizar frases acolhedoras como: \"Perfeito, só um momento que já estou localizando o seu cadastro, tudo bem?\"." },
-    { salespersonLine: "20 pacotinhos. O que mais?", context: "Após confirmar o pedido principal, a vendedora apenas pergunta de forma direta se há mais itens desejados.", whatWentWrong: "Faltou iniciativa para sugerir produtos complementares ou promoção de vantagens, limitando-se à mera tomada do pedido.", impact: "Perde-se oportunidade de aumentar o ticket médio e oferecer soluções completas ao cliente.", suggestion: "Exemplo: \"Além dos papel toalha, temos promoção em álcool gel e saboneteira nesta semana. Posso te enviar informações ou incluir algum desses itens no seu pedido?\"" },
-    { salespersonLine: "Só o papel toalha, né?", context: "No fechamento do pedido, a vendedora confirma se a cliente não deseja outro item.", whatWentWrong: "Novamente, faltou proatividade para sugerir vendas adicionais baseadas em histórico ou complementaridade de produtos.", impact: "A ausência de abordagem consultiva pode limitar a percepção de valor do atendimento, tornando-o apenas operacional.", suggestion: "Sugestão prática: \"Você costuma adquirir também guardanapos ou produtos de limpeza. Gostaria de aproveitar alguma oferta desses itens hoje?\"" }
-  ]
-};
-
-/* Helpers visuais (mantidos) */
+/* Helpers visuais */
 const stageLabels: Record<StageKey, string> = { opening: 'Abertura', discovery: 'Descoberta', qualification: 'Qualificação', closing: 'Fechamento' };
 const scoreBadgeColor = (score: number) => {
   if (score < 50) return 'text-rose-600 bg-rose-100/80 dark:bg-rose-500/10';
@@ -107,309 +83,332 @@ const ratingFromPercent = (p: number) => {
   return { label: 'Excelente', className: 'text-emerald-600 bg-emerald-100/80 dark:bg-emerald-500/10' };
 };
 
-/* Score Ring */
+
+// --- Componentes Visuais Auxiliares ---
+
 const ScoreRing: React.FC<{ scorePercent: number; label?: string; size?: number; stroke?: number }> = ({ scorePercent, label = 'Score Geral', size = 160, stroke = 12 }) => {
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const clamped = Math.min(Math.max(scorePercent, 0), 100);
-  const offset = circumference * (1 - clamped / 100);
-  const ringColor = clamped < 50 ? 'text-rose-500' : clamped < 75 ? 'text-amber-500' : 'text-emerald-500';
-
-  return (
-    <div className="relative inline-flex flex-col items-center justify-center">
-      <div className="absolute inset-0 -z-10 blur-2xl opacity-40 rounded-full bg-gradient-to-tr from-indigo-400/30 via-primary-400/20 to-emerald-400/30" />
-      <svg width={size} height={size} className="overflow-visible">
-        <circle cx={size / 2} cy={size / 2} r={radius} stroke="currentColor" strokeWidth={stroke} className="text-slate-200/90 dark:text-slate-700/80" fill="none" />
-        <circle cx={size / 2} cy={size / 2} r={radius} stroke="currentColor" strokeWidth={stroke} className={ringColor} fill="none" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" transform={`rotate(-90 ${size / 2} ${size / 2})`} />
-        <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" className="font-extrabold text-slate-900 dark:text-white" style={{ fontSize: 22, fill: 'currentColor' }}>{Math.round(clamped)}%</text>
-      </svg>
-      <span className="mt-2 text-xs font-medium text-slate-600 dark:text-slate-300">{label}</span>
-    </div>
-  );
+    const radius = (size - stroke) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const clamped = Math.min(Math.max(scorePercent, 0), 100);
+    const offset = circumference * (1 - clamped / 100);
+    const ringColor = clamped < 50 ? 'text-rose-500' : clamped < 75 ? 'text-amber-500' : 'text-emerald-500';
+  
+    return (
+      <div className="relative inline-flex flex-col items-center justify-center">
+        <div className="absolute inset-0 -z-10 blur-2xl opacity-40 rounded-full bg-gradient-to-tr from-indigo-400/30 via-primary-400/20 to-emerald-400/30" />
+        <svg width={size} height={size} className="overflow-visible">
+          <circle cx={size / 2} cy={size / 2} r={radius} stroke="currentColor" strokeWidth={stroke} className="text-slate-200/90 dark:text-slate-700/80" fill="none" />
+          <circle cx={size / 2} cy={size / 2} r={radius} stroke="currentColor" strokeWidth={stroke} className={ringColor} fill="none" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+          <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" className="font-extrabold text-slate-900 dark:text-white" style={{ fontSize: 22, fill: 'currentColor' }}>{Math.round(clamped)}%</text>
+        </svg>
+        <span className="mt-2 text-xs font-medium text-slate-600 dark:text-slate-300">{label}</span>
+      </div>
+    );
 };
 
-const NewAnalysisContent: React.FC<{ analysis: NewAnalysis; onCopy: (text: string, type: string) => void; copied: string | null }> = ({ analysis, onCopy, copied }) => {
-  const overallPercent = useMemo(() => {
-    const s = analysis.performance.overallScore;
-    return s <= 10 ? s * 10 : s;
-  }, [analysis.performance.overallScore]);
-
-  const rating = useMemo(() => ratingFromPercent(overallPercent), [overallPercent]);
-
-  const stageEntries = Object.entries(analysis.performance.stages) as [StageKey, StageData][];
-  const lowestStage = useMemo(() => stageEntries.reduce((acc, cur) => (cur[1].score < acc[1].score ? cur : acc), stageEntries[0]), [stageEntries]);
-
-  return (
-    <div className="space-y-12">
-      <section>
-        <h3 className="font-semibold text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-3"><ClipboardIcon className="w-5 h-5 text-cyan-500" /> Resumo da Ligação</h3>
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-white/90 to-slate-50/70 dark:from-slate-900/60 dark:to-slate-800/50 p-5">
-          <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pr-2">{analysis.summary}</p>
-          <div className="mt-4 flex items-center gap-2">
-            <button onClick={() => onCopy(analysis.summary, 'resumo')} className="inline-flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition">{copied === 'resumo' ? <CheckIcon className="w-4 h-4 text-emerald-500" /> : <CopyIcon className="w-4 h-4" />}{copied === 'resumo' ? 'Copiado!' : 'Copiar resumo'}</button>
-            <a href="#pontos-melhoria" className="inline-flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-lg bg-primary-600 text-white hover:bg-primary-500 transition"><LightbulbIcon className="w-4 h-4" /> Ver dicas práticas</a>
-          </div>
-        </div>
-      </section>
-
-      <section id="detalhes-performance">
-        <h3 className="font-semibold text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-4"><RocketIcon className="w-5 h-5 text-emerald-500" /> Análise de Performance</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 p-6 shadow-sm h-full">
-              <div className="flex flex-col items-center justify-center gap-6 text-center h-full">
-                <ScoreRing scorePercent={overallPercent} label={`Score (${analysis.performance.overallScore})`} />
-                <div className="flex flex-col items-center space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${rating.className}`}>{rating.label}</span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">• {Math.round(overallPercent)}%</span>
-                  </div>
-                  <div className="text-sm text-slate-700 dark:text-slate-300">
-                    <p className="font-semibold text-slate-900 dark:text-white">Foco sugerido:</p>
-                    <p className="mt-0.5">{stageLabels[lowestStage[0]]}: {lowestStage[1].improvementSuggestion}</p>
-                  </div>
+const DetailedAnalysisContent: React.FC<{ analysis: NewAnalysis; onCopy: (text: string, type: string) => void; copied: string | null }> = ({ analysis, onCopy, copied }) => {
+    const overallPercent = useMemo(() => {
+        const s = analysis.performance.overallScore;
+        return s <= 10 ? s * 10 : s;
+    }, [analysis.performance.overallScore]);
+  
+    const rating = useMemo(() => ratingFromPercent(overallPercent), [overallPercent]);
+  
+    const stageEntries = Object.entries(analysis.performance.stages) as [StageKey, StageData][];
+    const lowestStage = useMemo(() => stageEntries.reduce((acc, cur) => (cur[1].score < acc[1].score ? cur : acc), stageEntries[0]), [stageEntries]);
+  
+    return (
+        <div className="space-y-12">
+            <section>
+                <h3 className="font-semibold text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-3">Resumo da Ligação</h3>
+                <div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-white/90 to-slate-50/70 dark:from-slate-900/60 dark:to-slate-800/50 p-5">
+                <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pr-2">{analysis.summary}</p>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {(Object.keys(analysis.performance.stages) as StageKey[]).map((stageKey) => {
-              const s = analysis.performance.stages[stageKey];
-              return (
-                <div key={stageKey} className="group rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 p-5 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-semibold text-slate-900 dark:text-white">{stageLabels[stageKey]}</h4>
-                    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${scoreBadgeColor(s.score)}`} title={`${s.score}%`}>{s.score}%</span>
-                  </div>
-                  <div className="h-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mb-4">
-                    <div className={`h-full bg-gradient-to-r ${barColor(s.score)} rounded-full`} style={{ width: `${s.score}%` }} />
-                  </div>
-                  <div className="space-y-2 text-sm">
-                    <p className="text-slate-700 dark:text-slate-300"><strong className="text-slate-900 dark:text-white">Feedback: </strong>{s.feedback}</p>
-                    <p className="text-slate-700 dark:text-slate-300 flex items-start gap-2"><LightbulbIcon className="w-4 h-4 mt-0.5 text-amber-500 flex-shrink-0" /><span><strong className="text-slate-900 dark:text-white">Sugestão: </strong>{s.improvementSuggestion}</span></p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+            </section>
       
-      <section>
-        <h3 className="font-semibold text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-3"><ChatBubbleIcon className="w-5 h-5 text-sky-500" /> Identificação dos Participantes</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {Object.entries(analysis.speakerMapping).map(([key, value]) => (
-            <div key={key} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{key}</p>
-              <p className="mt-1 font-semibold text-slate-900 dark:text-white capitalize">{value}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section>
-        <h3 className="font-semibold text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-3"><UserIcon className="w-5 h-5 text-indigo-500" /> Perfil do Cliente</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Nome</p>
-            <p className="mt-1 font-semibold text-slate-900 dark:text-white">{analysis.customerProfile.name}</p>
-          </div>
-          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Perfil</p>
-            <p className="mt-1 font-semibold text-slate-900 dark:text-white">{analysis.customerProfile.profile}</p>
-          </div>
-          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Estilo de Comunicação</p>
-            <p className="mt-1 font-semibold text-slate-900 dark:text-white">{analysis.customerProfile.communicationStyle}</p>
-          </div>
-        </div>
-      </section>
-
-      <section id="pontos-melhoria">
-        <h3 className="font-semibold text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-3"><WrenchIcon className="w-5 h-5 text-rose-500" /> Pontos de Melhoria</h3>
-        <div className="space-y-4">
-          {analysis.improvementPoints.map((item, idx) => (
-            <div key={idx} className="bg-white/80 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-2 text-sm flex-1">
-                  <p className="italic text-slate-500 dark:text-slate-400 border-l-4 border-slate-300 dark:border-slate-600 pl-3">“{item.salespersonLine}”</p>
-                  <p className="flex items-start gap-2 text-slate-700 dark:text-slate-300"><ChatBubbleIcon className="w-4 h-4 mt-0.5 text-sky-500 flex-shrink-0" /><span><strong className="text-slate-900 dark:text-white">Contexto:</strong> {item.context}</span></p>
-                  {item.whatWentWrong && (
-                    <p className="flex items-start gap-2 text-slate-700 dark:text-slate-300"><svg className="w-4 h-4 mt-0.5 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4m0 4h.01" /></svg><span><strong className="text-slate-900 dark:text-white">O que deu errado:</strong> {item.whatWentWrong}</span></p>
-                  )}
-                  {item.impact && (
-                    <p className="text-sm text-slate-600 dark:text-slate-400"><strong>Impacto:</strong> {item.impact}</p>
-                  )}
-                  <p className="flex items-start gap-2 text-slate-700 dark:text-slate-300"><LightbulbIcon className="w-4 h-4 mt-0.5 text-amber-500 flex-shrink-0" /><span><strong className="text-slate-900 dark:text-white">Sugestão (o que deveria ter sido feito):</strong> {item.suggestion}</span></p>
+            <section id="detalhes-performance">
+              <h3 className="font-semibold text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-4"><RocketIcon className="w-5 h-5 text-emerald-500" /> Análise de Performance</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1">
+                  <div className="sticky top-24 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 p-6 shadow-sm h-full">
+                    <div className="flex flex-col items-center justify-center gap-6 text-center h-full">
+                      <ScoreRing scorePercent={overallPercent} label={`Score (${analysis.performance.overallScore})`} />
+                      <div className="flex flex-col items-center space-y-3">
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${rating.className}`}>{rating.label}</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">• {Math.round(overallPercent)}%</span>
+                        </div>
+                        <div className="text-sm text-slate-700 dark:text-slate-300">
+                          <p className="font-semibold text-slate-900 dark:text-white">Foco sugerido:</p>
+                          <p className="mt-0.5">{stageLabels[lowestStage[0]]}: {lowestStage[1].improvementSuggestion}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex flex-col gap-2 items-end">
-                  <button onClick={() => onCopy(item.suggestion, `sug-${idx}`)} className="self-start inline-flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Copiar sugestão">{copied === `sug-${idx}` ? <CheckIcon className="w-4 h-4 text-emerald-500" /> : <CopyIcon className="w-4 h-4" />}{copied === `sug-${idx}` ? 'Copiado!' : 'Copiar'}</button>
-                  <button onClick={() => onCopy(`${item.salespersonLine}\nContexto: ${item.context}\nO que deu errado: ${item.whatWentWrong || '-'}\nImpacto: ${item.impact || '-'}\nSugestão: ${item.suggestion}`, `card-${idx}`)} className="text-xs px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-700 transition">Copiar card</button>
+      
+                <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  {(Object.keys(analysis.performance.stages) as StageKey[]).map((stageKey) => {
+                    const s = analysis.performance.stages[stageKey];
+                    return (
+                      <div key={stageKey} className="group rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 p-5 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold text-slate-900 dark:text-white">{stageLabels[stageKey]}</h4>
+                          <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${scoreBadgeColor(s.score)}`} title={`${s.score}%`}>{s.score}%</span>
+                        </div>
+                        <div className="h-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mb-4">
+                          <div className={`h-full bg-gradient-to-r ${barColor(s.score)} rounded-full`} style={{ width: `${s.score}%` }} />
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <p className="text-slate-700 dark:text-slate-300"><strong className="text-slate-900 dark:text-white">Feedback: </strong>{s.feedback}</p>
+                          <p className="text-slate-700 dark:text-slate-300 flex items-start gap-2"><LightbulbIcon className="w-4 h-4 mt-0.5 text-amber-500 flex-shrink-0" /><span><strong className="text-slate-900 dark:text-white">Sugestão: </strong>{s.improvementSuggestion}</span></p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
-          ))}
+            </section>
+            
+            <section>
+              <h3 className="font-semibold text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-3"><ChatBubbleIcon className="w-5 h-5 text-sky-500" /> Identificação dos Participantes</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {Object.entries(analysis.speakerMapping).map(([key, value]) => (
+                  <div key={key} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 p-4">
+                    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{key}</p>
+                    <p className="mt-1 font-semibold text-slate-900 dark:text-white capitalize">{value}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+      
+            <section>
+              <h3 className="font-semibold text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-3"><UserIcon className="w-5 h-5 text-indigo-500" /> Perfil do Cliente</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Nome</p>
+                  <p className="mt-1 font-semibold text-slate-900 dark:text-white">{analysis.customerProfile.name}</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Perfil</p>
+                  <p className="mt-1 font-semibold text-slate-900 dark:text-white">{analysis.customerProfile.profile}</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Estilo de Comunicação</p>
+                  <p className="mt-1 font-semibold text-slate-900 dark:text-white">{analysis.customerProfile.communicationStyle}</p>
+                </div>
+              </div>
+            </section>
+      
+            <section id="pontos-melhoria">
+              <h3 className="font-semibold text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-3"><WrenchIcon className="w-5 h-5 text-rose-500" /> Pontos de Melhoria</h3>
+              <div className="space-y-4">
+                {analysis.improvementPoints.map((item, idx) => (
+                  <div key={idx} className="bg-white/80 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-2 text-sm flex-1">
+                        <p className="italic text-slate-500 dark:text-slate-400 border-l-4 border-slate-300 dark:border-slate-600 pl-3">“{item.salespersonLine}”</p>
+                        <p className="flex items-start gap-2 text-slate-700 dark:text-slate-300"><ChatBubbleIcon className="w-4 h-4 mt-0.5 text-sky-500 flex-shrink-0" /><span><strong className="text-slate-900 dark:text-white">Contexto:</strong> {item.context}</span></p>
+                        {item.whatWentWrong && (
+                          <p className="flex items-start gap-2 text-slate-700 dark:text-slate-300"><svg className="w-4 h-4 mt-0.5 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4m0 4h.01" /></svg><span><strong className="text-slate-900 dark:text-white">O que deu errado:</strong> {item.whatWentWrong}</span></p>
+                        )}
+                        {item.impact && (
+                          <p className="text-sm text-slate-600 dark:text-slate-400"><strong>Impacto:</strong> {item.impact}</p>
+                        )}
+                        <p className="flex items-start gap-2 text-slate-700 dark:text-slate-300"><LightbulbIcon className="w-4 h-4 mt-0.5 text-amber-500 flex-shrink-0" /><span><strong className="text-slate-900 dark:text-white">Sugestão:</strong> {item.suggestion}</span></p>
+                      </div>
+                      <div className="flex flex-col gap-2 items-end">
+                        <button onClick={() => onCopy(item.suggestion, `sug-${idx}`)} className="self-start inline-flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Copiar sugestão">{copied === `sug-${idx}` ? <CheckIcon className="w-4 h-4 text-emerald-500" /> : <CopyIcon className="w-4 h-4" />}{copied === `sug-${idx}` ? 'Copiado!' : 'Copiar'}</button>
+                        <button onClick={() => onCopy(`${item.salespersonLine}\nContexto: ${item.context}\nO que deu errado: ${item.whatWentWrong || '-'}\nImpacto: ${item.impact || '-'}\nSugestão: ${item.suggestion}`, `card-${idx}`)} className="text-xs px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-700 transition">Copiar card</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
         </div>
-      </section>
-    </div>
-  );
+    );
 };
-
+  
+// --- Componente Principal ---
 
 export const AnalysisDetailPage: React.FC<AnalysisDetailPageProps> = ({ callId, onBack }) => {
-  const [call, setCall] = useState<Task | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
+    const [call, setCall] = useState<Task | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [copied, setCopied] = useState<string | null>(null);
+    const [activeView, setActiveView] = useState<'summary' | 'details'>('summary');
 
-  useEffect(() => {
-    const fetchTask = () => {
-      // Não precisa setar loading aqui, pois o SSE vai atualizar
-      api
-        .get<Task>(`/tasks/${callId}`)
-        .then((response) => setCall(response.data))
-        .catch(() => setError('Não foi possível carregar os detalhes da análise.'))
-        .finally(() => setIsLoading(false));
-    };
-
-    fetchTask();
-
-    const eventSource = new EventSource(`${API_URL}/tasks/stream?token=${localStorage.getItem('authToken')}`);
-    eventSource.onmessage = (event) => {
-        try {
-            const updatedTask = JSON.parse(event.data) as Task;
-            if (updatedTask.id === callId) {
-                setCall(updatedTask); // Apenas atualiza o estado com a nova task
+    useEffect(() => {
+        const fetchTask = () => {
+          api
+            .get<Task>(`/tasks/${callId}`)
+            .then((response) => setCall(response.data))
+            .catch(() => setError('Não foi possível carregar os detalhes da análise.'))
+            .finally(() => setIsLoading(false));
+        };
+    
+        fetchTask();
+    
+        const eventSource = new EventSource(`${API_URL}/tasks/stream?token=${localStorage.getItem('authToken')}`);
+        eventSource.onmessage = (event) => {
+            try {
+                const updatedTask = JSON.parse(event.data) as Task;
+                if (updatedTask.id === callId) {
+                    setCall(updatedTask);
+                }
+            } catch (e) {
+                console.error("Falha ao processar evento SSE:", e);
             }
-        } catch (e) {
-            console.error("Falha ao processar evento SSE:", e);
+        };
+        
+        return () => eventSource.close();
+    }, [callId]);
+  
+    const handleRequestAnalysis = async () => {
+        if (!call) return;
+        setError(null);
+        try {
+            await api.post(`/tasks/${call.id}/analyze`);
+        } catch (err: any) {
+            setError(err.response?.data?.error || 'Falha ao iniciar a análise.');
         }
     };
-    
-    return () => eventSource.close();
-  }, [callId]);
-
-  const handleRequestAnalysis = async () => {
-    if (!call) return;
-    // Não precisa mais do estado isAnalyzing
-    setError(null);
-    try {
-      // A UI vai mudar automaticamente quando o evento SSE com status 'ANALYZING' chegar
-      await api.post(`/tasks/${call.id}/analyze`);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Falha ao iniciar a análise.');
-    }
-  };
-
-  const handleCopy = useCallback(async (text: string, type: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(type);
-      setTimeout(() => setCopied(null), 2000);
-    } catch (err) {
-      console.error('Falha ao copiar:', err);
-    }
-  }, []);
-
-  const handleDownloadVTT = () => {
-    if (!call?.transcription) return;
-    const blob = new Blob([call.transcription], { type: 'text/vtt;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const filename = `transcricao-${call.clientName?.replace(/\s+/g, '-').toLowerCase() || callId}.vtt`;
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const dateFormatted = useMemo(() => call?.createdAt ? new Date(call.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : '', [call?.createdAt]);
   
-  const analysisData: any = useMemo(() => {
-    const raw = (call as any)?.analysis;
-    return isNewAnalysis(raw) ? raw : null;
-  }, [call]);
+    const handleCopy = useCallback(async (text: string, type: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopied(type);
+            setTimeout(() => setCopied(null), 2000);
+        } catch (err) {
+            console.error('Falha ao copiar:', err);
+        }
+    }, []);
+  
+    const handleDownloadVTT = () => {
+        if (!call?.transcription) return;
+        const blob = new Blob([call.transcription], { type: 'text/vtt;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const filename = `transcricao-${call.clientName?.replace(/\s+/g, '-').toLowerCase() || callId}.vtt`;
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+  
+    const dateFormatted = useMemo(() => call?.createdAt ? new Date(call.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : '', [call?.createdAt]);
+    
+    const analysisData: NewAnalysis | null = useMemo(() => {
+        const raw = call?.analysis;
+        return isNewAnalysis(raw) ? raw : null;
+    }, [call]);
+  
+    if (isLoading) return <div className="text-center p-8">Carregando análise...</div>;
+    if (!call) return <div className="text-center p-8 text-red-500">{error || 'Análise não encontrada.'}</div>;
+  
+    const canAnalyze = call.status === 'TRANSCRIBED' || call.status === 'FAILED';
+    const isAnalyzing = call.status === 'ANALYZING';
+    const showAnalysis = call.status === 'COMPLETED' && analysisData;
 
-  if (isLoading) return <div className="text-center p-8">Carregando análise...</div>;
-  if (!call) return <div className="text-center p-8 text-red-500">{error || 'Análise não encontrada.'}</div>;
-
-  const canAnalyze = call.status === 'TRANSCRIBED' || call.status === 'FAILED';
-  const isAnalyzing = call.status === 'ANALYZING';
-  const showAnalysis = call.status === 'COMPLETED' && analysisData;
-
-  return (
-    <div className="max-w-5xl mx-auto p-4 md:p-8">
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <button onClick={onBack} className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"><ArrowLeftIcon className="w-5 h-5" /> Voltar para o Dashboard</button>
-        <div className="flex items-center gap-2">
-          <button onClick={() => handleCopy(`${window.location.origin}/tasks/${callId}`, 'link')} className="inline-flex items-center gap-2 text-sm font-medium px-3.5 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">{copied === 'link' ? <CheckIcon className="w-5 h-5 text-emerald-500" /> : <LinkIcon className="w-5 h-5" />}{copied === 'link' ? 'Link copiado!' : 'Copiar link'}</button>
-          <a href={`${API_URL}/tasks/${callId}/pdf?token=${localStorage.getItem('authToken')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-medium px-3.5 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-indigo-500 text-white hover:opacity-95 transition"><DocumentArrowDownIcon className="w-5 h-5" /> Exportar PDF</a>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-700/50 bg-white/70 dark:bg-slate-800/60 shadow-lg overflow-hidden backdrop-blur-md">
-        <div className="p-6 md:p-8">
-          <header className="pb-6 border-b border-slate-200/70 dark:border-slate-700/60">
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Análise com Cliente: <span className="text-primary-600 dark:text-primary-400">{call.clientName || 'Não informado'}</span></h2>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200"><UserIcon className="w-4 h-4" /> Vendedora: <strong className="font-semibold ml-1">{call.saleswoman?.name || 'Não identificada'}</strong></span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200"><CalendarIcon className="w-4 h-4" /> {dateFormatted}</span>
-            </div>
-          </header>
-
-          <div className="mt-6">
-            {showAnalysis ? (
-              <NewAnalysisContent analysis={analysisData} onCopy={handleCopy} copied={copied} />
-            ) : (
-              <section>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="font-semibold text-lg text-slate-900 dark:text-white mb-3">Áudio da Ligação</h3>
-                    <audio controls className="w-full"><source src={`${API_URL}/tasks/${call.id}/audio?token=${localStorage.getItem('authToken')}`} type="audio/mpeg" />Seu navegador não suporta o elemento de áudio.</audio>
-                    
-                    <div className="mt-6 p-4 rounded-lg bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700">
-                      <h3 className="font-semibold text-lg text-slate-900 dark:text-white mb-2">Análise por IA</h3>
-                      {canAnalyze && (
-                        <>
-                          <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
-                            {call.status === 'FAILED' ? 'A tentativa anterior de análise falhou.' : 'A transcrição está pronta.'} Clique para gerar a análise de performance.
-                          </p>
-                          <button onClick={handleRequestAnalysis} className="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700">
-                            <LightbulbIcon className="w-5 h-5" />
-                            {call.status === 'FAILED' ? 'Tentar Análise Novamente' : 'Analisar com IA'}
-                          </button>
-                        </>
-                      )}
-
-                      {isAnalyzing && (
-                        <div className="flex items-center gap-3 text-sm text-indigo-600 dark:text-indigo-400">
-                          <Spinner/>
-                          <span>A IA está analisando. A página será atualizada automaticamente.</span>
-                        </div>
-                      )}
-
-                      {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
-                    </div>
-
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold text-lg text-slate-900 dark:text-white">Transcrição</h3>
-                      <button onClick={handleDownloadVTT} className="text-xs md:text-sm px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Baixar .vtt</button>
-                    </div>
-                    <div className="bg-slate-50 dark:bg-slate-800/70 p-4 rounded-lg border border-slate-200 dark:border-slate-700 max-h-96 overflow-y-auto">
-                      <FormattedTranscription vttContent={call.transcription} />
-                    </div>
-                  </div>
-                </div>
-              </section>
-            )}
+    const TabButton: React.FC<{ view: 'summary' | 'details', children: React.ReactNode, disabled?: boolean }> = ({ view, children, disabled }) => (
+        <button
+            onClick={() => setActiveView(view)}
+            disabled={disabled}
+            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 dark:focus:ring-offset-slate-800 ${
+                activeView === view
+                ? 'bg-white dark:bg-slate-800 text-primary-600 dark:text-primary-400 border-b-2 border-primary-500'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed'
+            }`}
+        >
+            {children}
+        </button>
+    );
+  
+    return (
+      <div className="max-w-5xl mx-auto p-4 md:p-8">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <button onClick={onBack} className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"><ArrowLeftIcon className="w-5 h-5" /> Voltar para o Dashboard</button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => handleCopy(`${window.location.origin}/tasks/${callId}`, 'link')} className="inline-flex items-center gap-2 text-sm font-medium px-3.5 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">{copied === 'link' ? <CheckIcon className="w-5 h-5 text-emerald-500" /> : <LinkIcon className="w-5 h-5" />}{copied === 'link' ? 'Link copiado!' : 'Copiar link'}</button>
+            <a href={`${API_URL}/tasks/${callId}/pdf?token=${localStorage.getItem('authToken')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-medium px-3.5 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-indigo-500 text-white hover:opacity-95 transition"><DocumentArrowDownIcon className="w-5 h-5" /> Exportar PDF</a>
           </div>
         </div>
-      </div>
-    </div>
-  );
-};
+  
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700/50 bg-white/70 dark:bg-slate-800/60 shadow-lg overflow-hidden backdrop-blur-md">
+            <div className="p-6 md:p-8">
+                <header className="pb-4">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Análise com Cliente: <span className="text-primary-600 dark:text-primary-400">{call.clientName || 'Não informado'}</span></h2>
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200"><UserIcon className="w-4 h-4" /> Vendedora: <strong className="font-semibold ml-1">{call.saleswoman?.name || 'Não identificada'}</strong></span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200"><CalendarIcon className="w-4 h-4" /> {dateFormatted}</span>
+                    </div>
+                </header>
 
+                <div className="mt-4 border-b border-slate-200 dark:border-slate-700">
+                    <nav className="-mb-px flex space-x-4">
+                        <TabButton view="summary">Resumo e Transcrição</TabButton>
+                        <TabButton view="details" disabled={!showAnalysis}>Análise Detalhada</TabButton>
+                    </nav>
+                </div>
+    
+                <div className="mt-6">
+                    {activeView === 'summary' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Coluna Esquerda: Áudio e Análise/Botão */}
+                            <div>
+                                <h3 className="font-semibold text-lg text-slate-900 dark:text-white mb-3">Áudio da Ligação</h3>
+                                <audio controls className="w-full"><source src={`${API_URL}/tasks/${call.id}/audio?token=${localStorage.getItem('authToken')}`} type="audio/mpeg" />Seu navegador não suporta o elemento de áudio.</audio>
+                                
+                                <div className="mt-6 p-4 rounded-lg bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700">
+                                <h3 className="font-semibold text-lg text-slate-900 dark:text-white mb-2">{showAnalysis ? 'Resumo da Ligação' : 'Análise por IA'}</h3>
+                                {canAnalyze && (
+                                    <>
+                                    <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
+                                        {call.status === 'FAILED' ? 'A tentativa anterior de análise falhou.' : 'A transcrição está pronta.'} Clique para gerar a análise de performance.
+                                    </p>
+                                    <button onClick={handleRequestAnalysis} className="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700">
+                                        <LightbulbIcon className="w-5 h-5" />
+                                        {call.status === 'FAILED' ? 'Tentar Análise Novamente' : 'Analisar com IA'}
+                                    </button>
+                                    </>
+                                )}
+                                {isAnalyzing && (
+                                    <div className="flex items-center gap-3 text-sm text-indigo-600 dark:text-indigo-400">
+                                    <Spinner/>
+                                    <span>A IA está analisando. A página será atualizada automaticamente.</span>
+                                    </div>
+                                )}
+                                {showAnalysis && (
+                                    <div>
+                                    <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pr-2">{analysisData.summary}</p>
+                                    </div>
+                                )}
+                                {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
+                                </div>
+                            </div>
+
+                            {/* Coluna Direita: Transcrição */}
+                            <div>
+                                <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-semibold text-lg text-slate-900 dark:text-white">Transcrição</h3>
+                                <button onClick={handleDownloadVTT} className="text-xs md:text-sm px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Baixar .vtt</button>
+                                </div>
+                                <div className="bg-slate-50 dark:bg-slate-800/70 p-4 rounded-lg border border-slate-200 dark:border-slate-700 max-h-96 overflow-y-auto">
+                                <FormattedTranscription vttContent={call.transcription} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {activeView === 'details' && showAnalysis && (
+                        <DetailedAnalysisContent analysis={analysisData} onCopy={handleCopy} copied={copied} />
+                    )}
+                </div>
+            </div>
+        </div>
+      </div>
+    );
+};
+  
 export default AnalysisDetailPage;
