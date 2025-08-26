@@ -29,6 +29,16 @@ const ClockIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     </svg>
 );
 
+const BeakerIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.512 1.424l-1.128 1.5a.75.75 0 00.67 1.212h5.436a.75.75 0 00.67-1.212l-1.128-1.5a2.25 2.25 0 01-.512-1.424V3.104a3.375 3.375 0 00-3.188 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15.75h.008v.008H12v-.008z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.375 9.75h17.25" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 14.25h15" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5.625 18.75h12.75" />
+    </svg>
+);
+
 
 // --- Componente Interno para Lógica de Status ---
 interface StatusIndicatorProps {
@@ -46,6 +56,15 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({ status, hasAnalysis }
     );
   }
 
+  if (status === 'TRANSCRIBED') {
+    return (
+        <div className="flex items-center gap-1.5 mt-2 text-xs font-medium text-blue-600 dark:text-blue-400">
+            <BeakerIcon className="w-4 h-4" />
+            <span>Ainda não analisado</span>
+        </div>
+    );
+  }
+
   if (status === 'FAILED') {
     return (
       <div className="flex items-center gap-1.5 mt-2 text-xs font-medium text-rose-600 dark:text-rose-400">
@@ -55,8 +74,7 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({ status, hasAnalysis }
     );
   }
 
-  // Adicionado um status para "Pendente" ou outros estados intermediários
-  if (status === 'PENDING' || status === 'TRANSCRIBING' || status === 'ANALYZING') {
+  if (status === 'PENDING' || status === 'TRANSCRIBING' || status === 'ANALYZING' || status === 'ALIGNING' || status === 'DIARIZING') {
     return (
         <div className="flex items-center gap-1.5 mt-2 text-xs font-medium text-sky-600 dark:text-sky-400">
             <ClockIcon className="w-4 h-4" />
