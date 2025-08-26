@@ -116,7 +116,7 @@ def generate_summary(request: GenerateSummaryRequest):
     Você é um gerente de vendas sênior e está preparando uma análise de desempenho para a vendedora chamada "{request.name}".
     Você tem em mãos as últimas {len(request.transcriptions)} transcrições de suas ligações.
     O modelo de transcrição que gera o arquivo VTT não é perfeito. Frequentemente, ele confunde os interlocutores, atribuindo a fala de uma pessoa a outra (ex: SPEAKER 01 pode conter falas tanto do vendedor quanto do cliente). Portanto, sua análise não deve confiar cegamente nessas etiquetas de voz. Sua inteligência está em superar essa limitação.
-
+    Ignore as transcrições que são muito curtas ou que claramente não representam uma ligação de vendas.
     Sua tarefa é sintetizar essas análises em um único documento coeso e construtivo. O documento deve ser em formato de markdown, direcionado para a vendedora, bem detalhado e sempre dando exemplos concretos das ligações.
 
     **Regras obrigatórias de formatação:**
