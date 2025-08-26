@@ -52,13 +52,6 @@ services:
       - ./backend-node/uploads:/app/uploads
     depends_on:
       - redis
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
     networks:
       - sombra-net
 
