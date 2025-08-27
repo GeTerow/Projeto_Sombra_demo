@@ -2,151 +2,109 @@
 
 Este projeto é uma aplicação web full-stack projetada para fazer upload e analisar gravações de chamadas de vendas. A plataforma transcreve o áudio, identifica os interlocutores e utiliza um assistente de IA para gerar insights sobre o desempenho da vendedora, destacando pontos fortes e oportunidades de melhoria.
 
+## Tecnologias
+
+O projeto é construído com as seguintes tecnologias principais:
+
+- **Frontend**: React, Vite, TypeScript, Tailwind CSS
+- **Backend**: Node.js, Express, Prisma, PostgreSQL
+- **Worker**: Python, Celery, FastAPI, WhisperX, Pyannote
+- **Infraestrutura**: Docker, Docker Compose, Redis
+
 ## Arquitetura
 
-O sistema é dividido em três componentes principais:
+O sistema é containerizado e orquestrado com o Docker Compose, sendo composto pelos seguintes serviços:
 
-1.  **`frontend-react`**: A interface do usuário (UI) construída com React e Vite. Permite o upload de áudios e a visualização dos dashboards e análises.
-2.  **`backend-node`**: O servidor principal (orquestrador) construído com Node.js, Express e Prisma. Ele gerencia as tarefas, a comunicação com o banco de dados e serve a API para o frontend.
-3.  **`worker-python`**: O serviço de processamento pesado, construído em Python com Celery e FastAPI. É responsável pela transcrição do áudio, diarização (identificação de locutores) e a análise através da API da OpenAI.
+- **`frontend`**: A interface do usuário (UI) que interage com a API do backend.
+- **`backend`**: O servidor principal que gerencia a lógica de negócios, autenticação, e atua como orquestrador das tarefas de processamento.
+- **`worker`**: O serviço em Python que realiza o processamento pesado de áudio em segundo plano, incluindo transcrição e análise com IA.
+- **`db`**: Um banco de dados PostgreSQL para persistência dos dados.
+- **`redis`**: Um servidor Redis que atua como message broker para o Celery.
 
 ## Pré-requisitos
 
-Antes de começar, garanta que você tenha os seguintes softwares instalados em sua máquina:
+Para executar este projeto, você precisará ter instalado em sua máquina:
 
-* **Node.js**: (`v18` ou superior)
-* **npm** (geralmente vem com o Node.js)
-* **Python**: (Exatamente `v12.x`)
-* **Docker** e **Docker Compose**: Para executar o servidor Redis (broker do Celery).
-* **Git**
+- **Docker**
+- **Docker Compose**
 
-## Guia de Instalação e Execução
+## Como Executar o Projeto
 
-Siga os passos abaixo para configurar e rodar cada parte do sistema em seu ambiente de desenvolvimento.
+Siga os passos abaixo para configurar e executar o ambiente de desenvolvimento completo.
 
-### 1. Backend (Node.js)
+### 1. Configuração do Ambiente
 
-O backend é o coração do sistema, responsável por gerenciar o banco de dados e as tarefas.
+O projeto utiliza um arquivo `.env` na raiz para gerenciar todas as variáveis de ambiente. Comece copiando o arquivo de exemplo:
 
 ```bash
-# 1. Navegue até o diretório do backend
-cd backend-node
-
-# 2. Instale as dependências
-npm install
-
-# 3. Crie o arquivo de variáveis de ambiente
-# Copie o arquivo de exemplo .env.example para .env
-cp .env.example .env
-````
-
-Agora, edite o arquivo `.env` com as suas configurações:
-
-  * **`DATABASE_URL`**: Sua string de conexão para um banco de dados **PostgreSQL**. Ex: `postgresql://USER:PASSWORD@HOST:PORT/DATABASE`
-  * **`PYTHON_WORKER_URL`**: O endereço do worker Python. O padrão (`http://localhost:8000`) deve funcionar.
-  * **`PORT`**: A porta onde o backend irá rodar. O padrão é `3001`.
-
-<!-- end list -->
-
-```bash
-# 4. Execute as migrações do banco de dados com o Prisma
-# Isso criará as tabelas necessárias no seu banco
-npm run db:migrate
-
-# 5. (Opcional) Popule o banco com dados de exemplo
-npm run db:seed
-
-# 6. Inicie o servidor de desenvolvimento
-npm run dev
-```
-
-Após esses passos, o servidor backend estará rodando em `http://localhost:3001`.
-
------
-
-### 2\. Worker de IA (Python)
-
-O worker executa as tarefas de processamento de áudio em segundo plano.
-
-```bash
-# 1. Navegue até o diretório do worker
-cd worker-python
-
-# 2. Crie e ative um ambiente virtual (Virtual Environment) com Python 12
-# Certifique-se que o comando 'python' ou 'python3' aponta para sua instalação do Python 12
-# No Windows:
-python -m venv .venv
-.venv\\Scripts\\activate
-
-# No macOS/Linux:
-python3 -m venv .venv
-source .venv/bin/activate
-
-# 3. Instale as dependências Python
-# O comando a seguir instala todas as bibliotecas necessárias, incluindo PyTorch para CUDA 12.1
-pip install openai celery fastapi dotenv gevent requests uvicorn numpy==1.26.4 pyannote.audio==3.1.1 whisperx torch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 --index-url [https://download.pytorch.org/whl/cu121](https://download.pytorch.org/whl/cu121)
-
-# 4. Crie o arquivo de variáveis de ambiente
 cp .env.example .env
 ```
 
-Edite o arquivo `.env` com suas chaves de API e configurações:
+Agora, **edite o arquivo `.env`** e preencha todas as variáveis necessárias. As mais importantes são:
 
-  * **`OPENAI_API_KEY`**: Sua chave secreta da API da OpenAI.
-  * **`HF_TOKEN`**: Seu token de acesso do Hugging Face (necessário para o modelo de diarização).
-  * **`OPENAI_ASSISTANT_ID`**: O ID do assistente da OpenAI configurado para realizar as análises.
-  * **`REDIS_URL`**: Endereço do servidor Redis. O padrão (`redis://localhost:6380/0`) funciona com o `manage.sh`.
+- **`DATABASE_URL`**: String de conexão do PostgreSQL (o valor padrão já está configurado para o ambiente Docker).
+- **`ENCRYPTION_KEY`**: Uma chave de 32 caracteres para criptografia.
+- **`JWT_SECRET`**: Um segredo para a geração de tokens de autenticação.
+- **`INTERNAL_API_KEY`**: Uma chave para comunicação segura entre os serviços internos.
+- **`ADMIN_EMAIL`**, **`ADMIN_NAME`**, **`ADMIN_PASSWORD`**: Credenciais para a criação do usuário administrador inicial.
+- **`OPENAI_API_KEY`**: Sua chave da API da OpenAI.
+- **`HF_TOKEN`**: Seu token de acesso do Hugging Face (necessário para o modelo de diarização de áudio).
+- **`OPENAI_ASSISTANT_ID`**: O ID do assistente da OpenAI configurado para as análises.
 
-<!-- end list -->
+### 2. Inicializando os Serviços
 
-```bash
-# 5. Inicie todos os serviços do worker (Redis, Celery e FastAPI)
-# O script 'manage.sh' gerencia tudo para você.
-# Certifique-se que o Docker está em execução antes de rodar este comando.
-./manage.sh start
-```
-
-Para verificar o status dos serviços, use `./manage.sh status`. Para ver os logs, use `./manage.sh logs celery` ou `./manage.sh logs api`.
-
------
-
-### 3\. Frontend (React)
-
-O frontend é a interface com a qual o usuário interage.
+Com o arquivo `.env` configurado, você pode iniciar todos os serviços com um único comando:
 
 ```bash
-# 1. Navegue até o diretório do frontend
-cd frontend-react
-
-# 2. Instale as dependências
-npm install
-
-# 3. Crie o arquivo de variáveis de ambiente
-cp .env.example .env
+docker-compose up --build
 ```
 
-Edite o arquivo `.env` para garantir que ele aponte para o seu backend:
+Este comando irá construir as imagens Docker para cada serviço (se ainda não tiverem sido construídas) e iniciar os contêineres. O frontend e o backend são iniciados em modo de desenvolvimento com hot-reload.
 
-  * **`VITE_API_URL`**: O endereço da API do backend. O padrão (`http://localhost:3001/api/v1`) deve funcionar.
+### 3. Migração do Banco de Dados
 
-<!-- end list -->
+Após os contêineres estarem em execução, você precisa aplicar as migrações do banco de dados para criar as tabelas. Abra um **novo terminal** e execute:
 
 ```bash
-# 4. Inicie o servidor de desenvolvimento do Vite
-npm run dev
+docker-compose exec backend npm run db:migrate
 ```
 
-Após esses passos, a aplicação React estará acessível em seu navegador, geralmente em `http://localhost:5173`.
+### 4. (Opcional) Popular o Banco com Dados
 
-## Ordem de Execução
+Para popular o banco de dados com um usuário administrador e outros dados de exemplo, execute:
 
-Para rodar o sistema completo:
-
-1.  Inicie os serviços do **Worker** (`./manage.sh start`).
-2.  Inicie o servidor do **Backend** (`npm run dev`).
-3.  Inicie o servidor do **Frontend** (`npm run dev`).
-
-Agora você está pronto para usar a aplicação\!
-
+```bash
+docker-compose exec backend npm run db:seed
 ```
+
+### 5. Acessando a Aplicação
+
+Após os passos acima, a aplicação estará disponível nos seguintes endereços:
+
+- **Frontend**: [http://localhost:5173](http://localhost:5173)
+- **Backend API**: [http://localhost:3001](http://localhost:3001)
+
+## Execução com Suporte a GPU (NVIDIA)
+
+Se sua máquina possui uma placa de vídeo NVIDIA e você tem os drivers corretos e o `nvidia-container-toolkit` instalado, você pode acelerar o processo de transcrição. Para isso, utilize o arquivo de configuração adicional `docker-compose.gpu.yml`:
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
 ```
+
+Este comando mescla a configuração padrão com a de GPU, ativando o suporte à placa de vídeo para o serviço do `worker`.
+
+## Comandos Úteis do Docker Compose
+
+- **Parar todos os serviços**:
+  ```bash
+  docker-compose down
+  ```
+- **Ver logs de um serviço específico (ex: worker)**:
+  ```bash
+  docker-compose logs -f worker
+  ```
+- **Entrar no shell de um contêiner (ex: backend)**:
+  ```bash
+  docker-compose exec backend sh
+  ```
