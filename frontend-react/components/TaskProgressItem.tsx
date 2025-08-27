@@ -24,8 +24,8 @@ export const TaskProgressItem: React.FC<TaskProgressItemProps> = ({ task }) => {
                 return { icon: <ProcessingSpinner />, label: 'Alinhando', progress: '50%', bgColor: 'bg-sky-500' };
             case 'DIARIZING':
                 return { icon: <ProcessingSpinner />, label: 'Identificando', progress: '75%', bgColor: 'bg-sky-500' };
-            case 'TRANSCRIBED': // NOVO ESTADO
-                return { icon: <TranscriptIcon className="w-5 h-5 text-blue-500" />, label: 'Transcrito', progress: '85%', bgColor: 'bg-blue-500' };
+            case 'TRANSCRIBED':
+                return { icon: <CheckCircleIcon className="w-5 h-5 text-emerald-500" />, label: 'Concluído', progress: '100%', bgColor: 'bg-emerald-500' };
             case 'ANALYZING':
                 return { icon: <ProcessingSpinner />, label: 'Análise com IA', progress: '90%', bgColor: 'bg-indigo-500' };
             case 'COMPLETED':
@@ -40,9 +40,8 @@ export const TaskProgressItem: React.FC<TaskProgressItemProps> = ({ task }) => {
 
     const { icon, label, progress, bgColor } = getStatusInfo();
     
-    const statusColor = task.status === 'COMPLETED' ? 'text-emerald-600 dark:text-emerald-400' :
+    const statusColor = ['COMPLETED', 'TRANSCRIBED'].includes(task.status) ? 'text-emerald-600 dark:text-emerald-400' :
                         task.status === 'FAILED' ? 'text-rose-600 dark:text-rose-400' :
-                        task.status === 'TRANSCRIBED' ? 'text-blue-600 dark:text-blue-400' : // Cor para o novo estado
                         'text-slate-500 dark:text-slate-400';
 
 

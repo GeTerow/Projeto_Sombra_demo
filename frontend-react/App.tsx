@@ -153,7 +153,7 @@ const App: React.FC = () => {
                 onLogout={handleLogout}
                 user={user}
             />
-            <main className="relative pl-64">
+            <main className="relative pl-64 min-h-screen">
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-rose-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900" />
                 <div className="relative z-0">{renderContent()}</div>
             </main>
