@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Sidebar } from './components/SideBar';
 import { AudioUploadForm } from './components/AudioUploadForm';
 import { SaleswomenDashboard } from './components/SaleswomenDashboard';
@@ -8,7 +8,6 @@ import { UserManagementPage } from './components/UserManagementPage';
 import type { Task } from './types';
 import { API_URL } from './config';
 import { LoginPage } from './components/LoginPage';
-import api from './src/services/api';
 import { UploadProgressTracker } from './components/UploadProgressTracker';
 
 export type View =
@@ -31,6 +30,8 @@ const App: React.FC = () => {
         }
         return 'dark';
     });
+
+    const removalTimers = useRef(new Map<string, number>())
 
     const [tasks, setTasks] = useState<Task[]>([]);
     const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -63,6 +64,10 @@ const App: React.FC = () => {
                 try {
                     const updatedTask = JSON.parse(event.data) as Task;
                     if (updatedTask.id) {
+                        if (removalTimers.current.has(updatedTask.id)) {
+                            clearTimeout(removalTimers.current.get(updatedTask.id));
+                            removalTimers.current.delete(updatedTask.id);
+                        }
                         setTasks(prevTasks => {
                             const existingTaskIndex = prevTasks.findIndex(t => t.id === updatedTask.id);
                             if (existingTaskIndex !== -1) {
@@ -73,6 +78,14 @@ const App: React.FC = () => {
                                 return [...prevTasks, updatedTask];
                             }
                         });
+
+                        if (updatedTask.status === 'COMPLETED' || updatedTask.status === 'TRANSCRIBED') {
+                            const timerId = window.setTimeout(() => {
+                                setTasks(currentTasks => currentTasks.filter(t => t.id !== updatedTask.id));
+                                removalTimers.current.delete(updatedTask.id);
+                            }, 60000);
+                            removalTimers.current.set(updatedTask.id, timerId);
+                        }
                     }
                 } catch (error) {
                     console.error("Failed to parse SSE event data:", error);

@@ -149,7 +149,7 @@ export const getActiveTasks = async (): Promise<Task[]> => {
   return prisma.task.findMany({
     where: {
       status: {
-        notIn: ['COMPLETED', 'FAILED'],
+        notIn: ['COMPLETED', 'FAILED', 'TRANSCRIBED'],
       },
     },
     include: { saleswoman: true },
