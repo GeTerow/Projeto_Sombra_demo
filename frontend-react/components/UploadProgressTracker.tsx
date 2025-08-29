@@ -27,13 +27,12 @@ export const UploadProgressTracker: React.FC<UploadProgressTrackerProps> = ({ ta
         try {
             const response = await api.delete('/tasks/failed');
             setCleanupMessage({ type: 'success', text: response.data.message });
-            onDataChanged(); // Força a atualização dos dados no painel
+            onDataChanged();
         } catch (error: any) {
             const message = error.response?.data?.error || 'Ocorreu um erro desconhecido ao apagar as tarefas.';
             setCleanupMessage({ type: 'error', text: message });
         } finally {
             setIsCleaning(false);
-            // Esconde a mensagem após 5 segundos
             setTimeout(() => setCleanupMessage(null), 5000);
         }
     };

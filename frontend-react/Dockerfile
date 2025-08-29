@@ -12,6 +12,5 @@ COPY . .
 # O Vite por padrão roda na porta 5173
 EXPOSE 5173
 
-# O comando "host" no seu package.json ("vite --host")
 # garante que o servidor seja acessível de fora do container.
 CMD ["npm", "run", "host"]

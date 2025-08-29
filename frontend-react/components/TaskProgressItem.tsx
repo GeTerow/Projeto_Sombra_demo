@@ -1,10 +1,9 @@
 import React from 'react';
-import type { Task, TaskStatus } from '../types';
+import type { Task } from '../types';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 
 const ClockIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
 const ExclamationCircleIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>;
-const TranscriptIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>; // Ícone para o estado Transcrito
 const ProcessingSpinner: React.FC = () => <div className="w-5 h-5 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>;
 
 
@@ -33,7 +32,6 @@ export const TaskProgressItem: React.FC<TaskProgressItemProps> = ({ task }) => {
             case 'FAILED':
                 return { icon: <ExclamationCircleIcon className="w-5 h-5 text-rose-500" />, label: 'Falhou', progress: '100%', bgColor: 'bg-rose-500' };
             default:
-                const exhaustiveCheck: never = task.status;
                 return { icon: <ExclamationCircleIcon className="w-5 h-5 text-rose-500" />, label: 'Desconhecido', progress: '100%', bgColor: 'bg-rose-500' };
         }
     };
