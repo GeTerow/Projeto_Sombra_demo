@@ -1,5 +1,5 @@
 export type TaskStatus = 'PENDING' | 'TRANSCRIBING' | 'ALIGNING' | 'DIARIZING' | 'TRANSCRIBED' | 'ANALYZING' | 'COMPLETED' | 'FAILED';
-
+export type StageKey = 'opening' | 'discovery' | 'qualification' | 'closing';
 
 // Sub-tipo para cada estágio da performance
 export interface StageAnalysis {

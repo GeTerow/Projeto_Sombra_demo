@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from './components/SideBar';
 import { AudioUploadForm } from './components/AudioUploadForm';
 import { SaleswomenDashboard } from './features/SaleswomenDashboard';
-import { AnalysisDetailPage } from './components/AnalysisDetailPage';
+import { AnalysisDetailPage } from './pages/AnalysisDetailPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { UserManagementPage } from './pages/UserManagementPage';
 import { LoginPage } from './pages/LoginPage';

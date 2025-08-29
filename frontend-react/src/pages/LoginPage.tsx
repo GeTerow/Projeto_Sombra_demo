@@ -1,43 +1,25 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { API_URL } from '../config';
-import { Spinner } from '../components/Spinner';
+// src/pages/LoginPage.tsx
+
+import React from 'react';
+import { Spinner } from '@/components/Spinner';
+import { LockClosedIcon } from '@/components/icons';
+import { useLogin } from '@/hooks/useLogin'; // Importando nosso novo hook
 
 interface Props {
   onLoginSuccess: (token: string, user: any) => void;
 }
 
-const LockClosedIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3A5.25 5.25 0 0012 1.5zM12 3a3.75 3.75 0 00-3.75 3.75v3h7.5v-3A3.75 3.75 0 0012 3z" clipRule="evenodd" />
-  </svg>
-);
-
 export const LoginPage: React.FC<Props> = ({ onLoginSuccess }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      setError('Por favor, preencha o e-mail e a senha.');
-      return;
-    }
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const response = await axios.post(`${API_URL}/auth/login`, { email, password });
-      const { token, user } = response.data;
-      onLoginSuccess(token, user);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Ocorreu um erro. Tente novamente.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // A lógica e o estado agora vêm do hook
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    error,
+    isLoading,
+    handleSubmit,
+  } = useLogin({ onLoginSuccess });
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4 dark:from-slate-900 dark:to-slate-950">

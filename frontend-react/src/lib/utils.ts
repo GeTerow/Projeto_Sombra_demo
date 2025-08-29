@@ -26,3 +26,7 @@ export const formatRelativeTime = (date: string | number | Date): string => {
         return '';
     }
 };
+
+export const pad2 = (n: number): string => {
+  return String(n).padStart(2, '0');
+}
