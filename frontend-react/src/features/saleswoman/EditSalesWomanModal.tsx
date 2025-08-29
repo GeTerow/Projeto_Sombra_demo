@@ -1,17 +1,11 @@
 import React, { useState } from 'react';
-import api from '../services/api';
-import { Spinner } from '../components/Spinner';
-import type { Saleswoman } from '../types/types';
+import api from '../../services/api';
+import { Spinner } from '../../components/Spinner';
+import type { Saleswoman, EditSaleswomanModalProps } from '../../types/types';
 
-interface Props {
-  saleswoman: Saleswoman;
-  onClose: () => void;
-  onSaleswomanUpdated: (updatedSaleswoman: Saleswoman) => void;
-}
-
-export const EditSaleswomanModal: React.FC<Props> = ({ saleswoman, onClose, onSaleswomanUpdated }) => {
+export const EditSaleswomanModal: React.FC<EditSaleswomanModalProps> = ({ saleswoman, onClose, onSaleswomanUpdated }) => {
     const [name, setName] = useState(saleswoman.name);
-    const [email, setEmail] = useState(saleswoman.email || ''); // Estado para o e-mail
+    const [email, setEmail] = useState(saleswoman.email || '');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -24,7 +18,6 @@ export const EditSaleswomanModal: React.FC<Props> = ({ saleswoman, onClose, onSa
         setIsLoading(true);
         setError('');
         try {
-            // Envia 'name' e 'email' para a API
             const response = await api.put<Saleswoman>(`/saleswomen/${saleswoman.id}`, { name, email });
             onSaleswomanUpdated(response.data);
             onClose();
@@ -46,7 +39,7 @@ export const EditSaleswomanModal: React.FC<Props> = ({ saleswoman, onClose, onSa
             >
                 <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-white">Editar Vendedora</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Campo Nome */}
+
                     <div>
                         <label htmlFor="saleswoman-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                             Nome da Vendedora
@@ -61,7 +54,7 @@ export const EditSaleswomanModal: React.FC<Props> = ({ saleswoman, onClose, onSa
                             autoFocus
                         />
                     </div>
-                    {/* Novo Campo E-mail */}
+
                     <div>
                         <label htmlFor="saleswoman-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                             E-mail

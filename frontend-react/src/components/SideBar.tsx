@@ -8,15 +8,7 @@ import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
 import { SunIcon } from './icons/SunIcon';
 import { UploadIcon } from './icons/UploadIcon';
 import { UsersIcon } from './icons/UsersIcon';
-
-interface SidebarProps {
-  currentView: View;
-  onViewChange: (view: 'upload' | 'dashboard' | 'settings' | 'users') => void;
-  onLogout: () => void;
-  user: any;
-  theme: Theme;
-  onThemeToggle: () => void;
-}
+import { SidebarProps } from '@/types/types';
 
 const NavButton: React.FC<{
   onClick: () => void;

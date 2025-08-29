@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Task, Analysis, StageKey } from '@/types/types';
+import type { Analysis, StageKey } from '@/types/types';
 import { FormattedTranscription } from '@/components/FormattedTranscription';
 import { Spinner } from '@/components/Spinner';
 import { API_URL } from '@/config';

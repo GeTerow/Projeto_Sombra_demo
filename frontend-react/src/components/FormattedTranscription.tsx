@@ -1,14 +1,6 @@
 import React from 'react';
+import { TranscriptionCue, FormattedTranscriptionProps } from '@/types/types';
 
-interface TranscriptionCue {
-  speaker: string;
-  timestamp: string;
-  text: string;
-}
-
-interface FormattedTranscriptionProps {
-  vttContent: string | null;
-}
 
 // Formata o timestamp de 'HH:MM:SS.ms' para 'MM:SS'
 const formatTimestamp = (vttTime: string): string => {

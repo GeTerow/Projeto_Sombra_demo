@@ -1,16 +1,12 @@
 import React from 'react';
 import { CallSummaryCard } from './CallSummaryCard';
-import { AddSaleswomanModal } from '../features/AddSaleswomanModal';
-import { EditSaleswomanModal } from '../features/EditSalesWomanModal';
-import { DocumentPlusIcon, ArrowDownTrayIcon, PaperAirplaneIcon, PlusIcon, SearchIcon, PencilIcon, TrashIcon } from '../components/icons';
-import { Avatar, Badge, Skeleton, Toast, ConfirmModal } from '../components/ui';
+import { AddSaleswomanModal } from '../saleswoman/AddSaleswomanModal';
+import { EditSaleswomanModal } from '../saleswoman/EditSalesWomanModal';
+import { DocumentPlusIcon, ArrowDownTrayIcon, PaperAirplaneIcon, PlusIcon, SearchIcon, PencilIcon, TrashIcon } from '../../components/icons';
+import { Avatar, Badge, Skeleton, Toast, ConfirmModal } from '../../components/ui';
 import { useSaleswomenDashboard } from '@/hooks/useSaleswomenDashboard';
 import { API_URL } from '@/config';
-
-interface SaleswomenDashboardProps {
-  onSelectCall: (callId: string) => void;
-  onDataChanged: () => void;
-}
+import { SaleswomenDashboardProps } from '@/types/types';
 
 export const SaleswomenDashboard: React.FC<SaleswomenDashboardProps> = ({ onSelectCall, onDataChanged }) => {
     const { states, actions } = useSaleswomenDashboard(onDataChanged);

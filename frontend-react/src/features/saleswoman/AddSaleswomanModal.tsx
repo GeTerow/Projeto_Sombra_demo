@@ -1,16 +1,12 @@
 import React, { useState } from 'react';
-import api from '../services/api';
-import { Spinner } from '../components/Spinner';
-import type { Saleswoman } from '../types/types';
+import api from '../../services/api';
+import { Spinner } from '../../components/Spinner';
+import type { Saleswoman, AddSaleswomanModalProps } from '../../types/types';
 
-interface Props {
-  onClose: () => void;
-  onSaleswomanAdded: (newSaleswoman: Saleswoman) => void;
-}
 
-export const AddSaleswomanModal: React.FC<Props> = ({ onClose, onSaleswomanAdded }) => {
+export const AddSaleswomanModal: React.FC<AddSaleswomanModalProps> = ({ onClose, onSaleswomanAdded }) => {
     const [name, setName] = useState('');
-    const [email, setEmail] = useState(''); // Estado para o e-mail
+    const [email, setEmail] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 

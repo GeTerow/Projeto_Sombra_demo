@@ -1,16 +1,10 @@
-// src/pages/LoginPage.tsx
-
 import React from 'react';
 import { Spinner } from '@/components/Spinner';
 import { LockClosedIcon } from '@/components/icons';
-import { useLogin } from '@/hooks/useLogin'; // Importando nosso novo hook
+import { useLogin } from '@/hooks/useLogin';
+import { LoginPageProps } from '@/types/types';
 
-interface Props {
-  onLoginSuccess: (token: string, user: any) => void;
-}
-
-export const LoginPage: React.FC<Props> = ({ onLoginSuccess }) => {
-  // A lógica e o estado agora vêm do hook
+export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const {
     email,
     setEmail,

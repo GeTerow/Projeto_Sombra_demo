@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import type { User } from '../types/types';
 import { AddUserModal } from '../components/AddUserModal';
-import { ShieldCheckIcon } from '../components/icons/ShieldCheckIcon';
-
-const PlusIcon: React.FC<{ className?: string }> = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12M6 12h12" /></svg>;
+import { ShieldCheckIcon, PlusIcon } from '../components/icons';
 
 export const UserManagementPage: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);

@@ -50,7 +50,7 @@ export const useSaleswomenDashboard = (onDataChanged: () => void) => {
 
     useEffect(() => {
         fetchSaleswomen();
-    }, []); // Executa apenas uma vez ao montar
+    }, []);
 
     useEffect(() => {
         if (!selectedSaleswoman) {

@@ -72,3 +72,116 @@ export interface User {
   createdAt: string;
   updatedAt: string;
 }
+
+export type ConfigFormData = {
+  OPENAI_API_KEY: string;
+  HF_TOKEN: string;
+  OPENAI_ASSISTANT_ID: string;
+  WHISPERX_MODEL: 'large-v3' | 'large-v2' | 'base' | 'small' | 'medium';
+  DIAR_DEVICE: 'cuda' | 'cpu';
+  ALIGN_DEVICE: 'cuda' | 'cpu';
+  SMTP_HOST: string;
+  SMTP_PORT: string;
+  SMTP_USER: string;
+  SMTP_PASS: string;
+  SMTP_FROM: string;
+  EMAIL_SCHEDULE: string;
+  SUMMARY_TRIGGER_COUNT: string;
+};
+
+export type ScheduleMode = 'weekdays' | 'daily' | 'weekly' | 'monthly' | 'custom';
+
+export interface StatusIndicatorProps {
+  status: Task['status'];
+  hasAnalysis: boolean;
+}
+
+export interface CallSummaryCardProps {
+  call: Task;
+  onClick: () => void;
+}
+
+export interface SaleswomenDashboardProps {
+  onSelectCall: (callId: string) => void;
+  onDataChanged: () => void;
+}
+
+export interface AddSaleswomanModalProps {
+  onClose: () => void;
+  onSaleswomanAdded: (newSaleswoman: Saleswoman) => void;
+}
+
+export interface EditSaleswomanModalProps {
+  saleswoman: Saleswoman;
+  onClose: () => void;
+  onSaleswomanUpdated: (updatedSaleswoman: Saleswoman) => void;
+}
+
+export interface TranscriptionCue {
+  speaker: string;
+  timestamp: string;
+  text: string;
+}
+
+export interface FormattedTranscriptionProps {
+  vttContent: string | null;
+}
+
+export interface UploadProgressTrackerProps {
+    tasks: Task[];
+    isConnected: boolean;
+    isAdmin?: boolean;
+    onDataChanged: () => void;
+}
+
+export interface TaskProgressItemProps {
+  task: Task;
+}
+
+export interface LoginPageProps {
+  onLoginSuccess: (token: string, user: any) => void;
+}
+
+export type View =
+    | { name: 'upload' }
+    | { name: 'dashboard' }
+    | { name: 'analysis', callId: string }
+    | { name: 'settings' }
+    | { name: 'users' };
+
+export type Theme = 'light' | 'dark';
+
+export interface AddUserModalProps {
+  onClose: () => void;
+  onUserAdded: (newUser: User) => void;
+}
+
+export interface AnalysisDetailPageProps {
+  callId: string;
+  onBack: () => void;
+}
+
+export interface ConfirmModalProps {
+    open: boolean;
+    title?: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+}
+
+export interface Props {
+  saleswoman: Saleswoman;
+  onClose: () => void;
+  onSaleswomanUpdated: (updatedSaleswoman: Saleswoman) => void;
+}
+
+export interface SidebarProps {
+  currentView: View;
+  onViewChange: (view: 'upload' | 'dashboard' | 'settings' | 'users') => void;
+  onLogout: () => void;
+  user: any;
+  theme: Theme;
+  onThemeToggle: () => void;
+}

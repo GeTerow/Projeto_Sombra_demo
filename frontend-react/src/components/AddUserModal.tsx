@@ -1,14 +1,9 @@
 import React, { useState } from 'react';
 import api from '../services/api';
 import { Spinner } from './Spinner';
-import type { User, UserRole } from '../types/types';
+import type { User, UserRole, AddUserModalProps } from '../types/types';
 
-interface Props {
-  onClose: () => void;
-  onUserAdded: (newUser: User) => void;
-}
-
-export const AddUserModal: React.FC<Props> = ({ onClose, onUserAdded }) => {
+export const AddUserModal: React.FC<AddUserModalProps> = ({ onClose, onUserAdded }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

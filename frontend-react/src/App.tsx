@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from './components/SideBar';
 import { AudioUploadForm } from './components/AudioUploadForm';
-import { SaleswomenDashboard } from './features/SaleswomenDashboard';
+import { SaleswomenDashboard } from './features/saleswoman/SaleswomenDashboard';
 import { AnalysisDetailPage } from './pages/AnalysisDetailPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { UserManagementPage } from './pages/UserManagementPage';

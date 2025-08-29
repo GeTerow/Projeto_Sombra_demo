@@ -1,3 +1,5 @@
+import { ListBulletIcon } from './ListBulletIcon';
+
 export * from './ArrowDownTrayIcon';
 export * from './ArrowLeftIcon';
 export * from './BeakerIcon';
@@ -36,3 +38,4 @@ export * from './UsersIcon';
 export * from './WrenchIcon';
 export * from './LockClosedIcon';
 export * from './XCircleIcon';
+export * from './ListBulletIcon';

@@ -1,13 +1,6 @@
 import React from 'react';
-import { Task } from '../types/types';
-import { CalendarIcon, CheckCircleIcon, XCircleIcon, ClockIcon, BeakerIcon } from '../components/icons';
-
-
-
-interface StatusIndicatorProps {
-  status: Task['status'];
-  hasAnalysis: boolean;
-}
+import { Task, StatusIndicatorProps } from '../../types/types';
+import { CalendarIcon, CheckCircleIcon, XCircleIcon, ClockIcon, BeakerIcon } from '../../components/icons';
 
 const StatusIndicator: React.FC<StatusIndicatorProps> = ({ status, hasAnalysis }) => {
   if (status === 'COMPLETED' && hasAnalysis) {

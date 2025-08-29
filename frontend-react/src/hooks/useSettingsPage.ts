@@ -1,24 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '@/services/api';
 import { pad2 } from '@/lib/utils';
-
-type ConfigFormData = {
-  OPENAI_API_KEY: string;
-  HF_TOKEN: string;
-  OPENAI_ASSISTANT_ID: string;
-  WHISPERX_MODEL: 'large-v3' | 'large-v2' | 'base' | 'small' | 'medium';
-  DIAR_DEVICE: 'cuda' | 'cpu';
-  ALIGN_DEVICE: 'cuda' | 'cpu';
-  SMTP_HOST: string;
-  SMTP_PORT: string;
-  SMTP_USER: string;
-  SMTP_PASS: string;
-  SMTP_FROM: string;
-  EMAIL_SCHEDULE: string;
-  SUMMARY_TRIGGER_COUNT: string;
-};
-
-type ScheduleMode = 'weekdays' | 'daily' | 'weekly' | 'monthly' | 'custom';
+import type { ConfigFormData, ScheduleMode } from '@/types/types';
 
 export const useSettingsPage = () => {
     const [config, setConfig] = useState<Partial<ConfigFormData>>({});
