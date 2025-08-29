@@ -47,9 +47,6 @@ Agora, **edite o arquivo `.env`** e preencha todas as variáveis necessárias. A
 - **`JWT_SECRET`**: Um segredo para a geração de tokens de autenticação.
 - **`INTERNAL_API_KEY`**: Uma chave para comunicação segura entre os serviços internos.
 - **`ADMIN_EMAIL`**, **`ADMIN_NAME`**, **`ADMIN_PASSWORD`**: Credenciais para a criação do usuário administrador inicial.
-- **`OPENAI_API_KEY`**: Sua chave da API da OpenAI.
-- **`HF_TOKEN`**: Seu token de acesso do Hugging Face (necessário para o modelo de diarização de áudio).
-- **`OPENAI_ASSISTANT_ID`**: O ID do assistente da OpenAI configurado para as análises.
 
 ### 2. Inicializando os Serviços
 
@@ -69,7 +66,7 @@ Após os contêineres estarem em execução, você precisa aplicar as migraçõe
 docker-compose exec backend npm run db:migrate
 ```
 
-### 4. (Opcional) Popular o Banco com Dados
+### 4. Popular o Banco com Dados (primeiro usuário admin)
 
 Para popular o banco de dados com um usuário administrador e outros dados de exemplo, execute:
 
