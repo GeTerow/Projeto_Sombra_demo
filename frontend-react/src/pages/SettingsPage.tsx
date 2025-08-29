@@ -202,7 +202,7 @@ export const SettingsPage: React.FC = () => {
                     <h2 className="text-xl font-bold flex items-center gap-3">
                         <CogIcon className="w-6 h-6 text-sky-500" /> Modelos e Processamento
                     </h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-6">Controle quais modelos e hardware serão usados pelo worker de IA.</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-6">Controle quais modelos serão usados pelo worker de IA.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label htmlFor="WHISPERX_MODEL" className="block text-sm font-medium mb-1">Modelo WhisperX</label>
@@ -212,20 +212,6 @@ export const SettingsPage: React.FC = () => {
                                 <option value="medium">medium</option>
                                 <option value="small">small</option>
                                 <option value="base">base</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label htmlFor="DIAR_DEVICE" className="block text-sm font-medium mb-1">Dispositivo de Diarização</label>
-                            <select id="DIAR_DEVICE" name="DIAR_DEVICE" value={config.DIAR_DEVICE || 'cpu'} onChange={handleChange} className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700/80 border border-slate-300 dark:border-slate-600 rounded-md">
-                                <option value="cpu">CPU</option>
-                                <option value="cuda">GPU (CUDA)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label htmlFor="ALIGN_DEVICE" className="block text-sm font-medium mb-1">Dispositivo de Alinhamento</label>
-                            <select id="ALIGN_DEVICE" name="ALIGN_DEVICE" value={config.ALIGN_DEVICE || 'cpu'} onChange={handleChange} className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700/80 border border-slate-300 dark:border-slate-600 rounded-md">
-                                <option value="cpu">CPU</option>
-                                <option value="cuda">GPU (CUDA)</option>
                             </select>
                         </div>
                     </div>
