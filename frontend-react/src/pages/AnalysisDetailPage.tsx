@@ -8,6 +8,7 @@ import {
     ArrowLeftIcon, DocumentArrowDownIcon, CopyIcon, CheckIcon, LinkIcon, CalendarIcon,
     UserIcon, LightbulbIcon, ChatBubbleIcon, WrenchIcon, RocketIcon, SadFaceIcon
 } from '@/components/icons';
+import { AnalysisDetailPageProps } from '@/types/types';
 
 const stageLabels: Record<StageKey, string> = { opening: 'Abertura', discovery: 'Descoberta', qualification: 'Qualificação', closing: 'Fechamento' };
 
@@ -162,11 +163,6 @@ const DetailedAnalysisContent: React.FC<{ analysis: Analysis; onCopy: (text: str
 
 
 // Componente Principal da Página 
-
-interface AnalysisDetailPageProps {
-  callId: string;
-  onBack: () => void;
-}
 
 export const AnalysisDetailPage: React.FC<AnalysisDetailPageProps> = ({ callId, onBack }) => {
     const { states, actions } = useAnalysisDetail(callId);
