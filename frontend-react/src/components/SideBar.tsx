@@ -1,5 +1,4 @@
 import React from 'react';
-import type { View, Theme } from '../App';
 import { ChartBarIcon } from './icons/ChartBarIcon';
 import { CogIcon } from './icons/CogIcon';
 import { LogoutIcon } from './icons/LogoutIcon';

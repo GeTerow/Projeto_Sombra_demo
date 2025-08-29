@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import api from '../services/api';
-import { Spinner } from './Spinner';
+import { Spinner } from './ui/Spinner';
 import type { User, UserRole, AddUserModalProps } from '../types/types';
 
 export const AddUserModal: React.FC<AddUserModalProps> = ({ onClose, onUserAdded }) => {

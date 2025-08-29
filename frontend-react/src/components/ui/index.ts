@@ -3,3 +3,4 @@ export * from './Badge';
 export * from './ConfirmModal';
 export * from './Skeleton';
 export * from './Toast';
+export * from './Spinner';

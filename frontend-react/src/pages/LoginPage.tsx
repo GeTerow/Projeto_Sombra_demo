@@ -1,5 +1,5 @@
 import React from 'react';
-import { Spinner } from '@/components/Spinner';
+import { Spinner } from '@/components/ui/Spinner';
 import { LockClosedIcon } from '@/components/icons';
 import { useLogin } from '@/hooks/useLogin';
 import { LoginPageProps } from '@/types/types';

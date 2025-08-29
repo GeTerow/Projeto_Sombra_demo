@@ -1,14 +1,5 @@
 import React from 'react';
-
-interface ConfirmModalProps {
-    open: boolean;
-    title?: string;
-    message: string;
-    confirmText?: string;
-    cancelText?: string;
-    onConfirm: () => void;
-    onCancel: () => void;
-}
+import { ConfirmModalProps } from '@/types/types';
 
 export const ConfirmModal: React.FC<ConfirmModalProps> = ({ open, title = 'Confirmar ação', message, confirmText = 'Confirmar', cancelText = 'Cancelar', onConfirm, onCancel }) => {
     if (!open) return null;

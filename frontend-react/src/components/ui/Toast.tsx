@@ -1,7 +1,6 @@
 import React from 'react';
 import { CheckCircleIcon, ExclamationTriangleIcon } from '@/components/icons';
-
-type ToastType = 'success' | 'error' | 'info';
+import { ToastType } from '@/types/types';
 
 export const Toast: React.FC<{ open: boolean; type?: ToastType; message: string; onClose: () => void }> = ({ open, type = 'info', message, onClose }) => {
     if (!open) return null;

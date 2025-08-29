@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Task } from '../types/types';
 import { TaskProgressItem } from './TaskProgressItem';
 import api from '../services/api';
-import { Spinner } from './Spinner';
+import { Spinner } from './ui/Spinner';
 import { TrashIcon, ListBulletIcon } from './icons';
 import { UploadProgressTrackerProps } from '../types/types';
 

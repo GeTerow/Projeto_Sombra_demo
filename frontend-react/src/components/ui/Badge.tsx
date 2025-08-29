@@ -1,6 +1,5 @@
 import React from 'react';
-
-type BadgeColor = 'slate' | 'green' | 'amber' | 'indigo';
+import { BadgeColor } from '@/types/types';
 
 export const Badge: React.FC<{ children: React.ReactNode; color?: BadgeColor; className?: string }> = ({ children, color = 'slate', className }) => {
     const colorMap: Record<BadgeColor, string> = {

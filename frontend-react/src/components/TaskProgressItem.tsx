@@ -1,11 +1,7 @@
 import React from 'react';
-import type { Task } from '../types/types';
+import type { TaskProgressItemProps } from '../types/types';
 import { CheckCircleIcon, ClockIcon, ExclamationTriangleIcon } from './icons';
-import { Spinner } from './Spinner';
-
-interface TaskProgressItemProps {
-  task: Task;
-}
+import { Spinner } from './ui/Spinner';
 
 export const TaskProgressItem: React.FC<TaskProgressItemProps> = ({ task }) => {
     

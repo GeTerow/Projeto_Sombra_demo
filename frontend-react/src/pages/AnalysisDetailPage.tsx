@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Analysis, StageKey } from '@/types/types';
 import { FormattedTranscription } from '@/components/FormattedTranscription';
-import { Spinner } from '@/components/Spinner';
+import { Spinner } from '@/components/ui/Spinner';
 import { API_URL } from '@/config';
 import { useAnalysisDetail } from '@/hooks/useAnalysisDetail';
 import {

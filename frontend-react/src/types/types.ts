@@ -64,6 +64,11 @@ export interface Task {
 
 export type UserRole = 'ADMIN' | 'USER';
 
+export type ToastType = 'success' | 'error' | 'info';
+
+export type BadgeColor = 'slate' | 'green' | 'amber' | 'indigo';
+
+
 export interface User {
   id: string;
   email: string;

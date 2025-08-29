@@ -1,5 +1,5 @@
 import React from 'react';
-import { Spinner } from '@/components/Spinner';
+import { Spinner } from '@/components/ui/Spinner';
 import { useSettingsPage } from '@/hooks/useSettingsPage';
 import { KeyIcon, CogIcon, CheckCircleIcon, EnvelopeIcon, ClockIcon } from '@/components/icons';
 

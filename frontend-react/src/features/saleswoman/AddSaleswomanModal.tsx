@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import api from '../../services/api';
-import { Spinner } from '../../components/Spinner';
+import { Spinner } from '../../components/ui/Spinner';
 import type { Saleswoman, AddSaleswomanModalProps } from '../../types/types';
 
 
