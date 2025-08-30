@@ -3,7 +3,6 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileFilter } from "../common/middlewares/upload.middleware"
 
-// Define o diretório onde os uploads serão guardados
 const UPLOAD_DIR = path.resolve('/app/uploads'); 
 
 // Garante que o diretório de uploads exista, se não, cria-o

@@ -52,7 +52,7 @@ export const sendSummaryEmail = async (saleswoman: Saleswoman, pdfPath: string) 
 
   const emailHtml = `
     <h1>Olá, ${saleswoman.name}!</h1>
-    <p>Seu resumo de desempenho semanal está pronto!</p>
+    <p>Seu resumo de desempenho está pronto!</p>
     <p>Anexamos o relatório em PDF para sua análise. Continue com o excelente trabalho!</p>
     <br>
     <p>Atenciosamente,</p>
@@ -88,6 +88,6 @@ export const sendTestEmail = async (testEmail: string) => {
     to: testEmail,
     subject: '✅ Teste de Configuração de E-mail - Projeto Sombra',
     html: emailHtml,
-    attachments: [], // Sem anexos para o e-mail de teste
+    attachments: [],
   });
 };

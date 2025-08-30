@@ -1,7 +1,7 @@
 import React from 'react';
 import type { TaskProgressItemProps } from '../types/types';
 import { CheckCircleIcon, ClockIcon, ExclamationTriangleIcon } from './icons';
-import { Spinner } from './ui/Spinner';
+import { ProcessingSpinner } from './ui';
 
 export const TaskProgressItem: React.FC<TaskProgressItemProps> = ({ task }) => {
     
@@ -10,15 +10,15 @@ export const TaskProgressItem: React.FC<TaskProgressItemProps> = ({ task }) => {
             case 'PENDING':
                 return { icon: <ClockIcon className="w-5 h-5 text-slate-400" />, label: 'Na fila', progress: '5%', bgColor: 'bg-slate-400' };
             case 'TRANSCRIBING':
-                return { icon: <Spinner />, label: 'Transcrevendo', progress: '25%', bgColor: 'bg-sky-500' };
+                return { icon: <ProcessingSpinner />, label: 'Transcrevendo', progress: '25%', bgColor: 'bg-sky-500' };
             case 'ALIGNING':
-                return { icon: <Spinner />, label: 'Alinhando', progress: '50%', bgColor: 'bg-sky-500' };
+                return { icon: <ProcessingSpinner />, label: 'Alinhando', progress: '50%', bgColor: 'bg-sky-500' };
             case 'DIARIZING':
-                return { icon: <Spinner />, label: 'Identificando', progress: '75%', bgColor: 'bg-sky-500' };
+                return { icon: <ProcessingSpinner />, label: 'Identificando', progress: '75%', bgColor: 'bg-sky-500' };
             case 'TRANSCRIBED':
                 return { icon: <CheckCircleIcon className="w-5 h-5 text-emerald-500" />, label: 'Concluído', progress: '100%', bgColor: 'bg-emerald-500' };
             case 'ANALYZING':
-                return { icon: <Spinner />, label: 'Análise com IA', progress: '90%', bgColor: 'bg-indigo-500' };
+                return { icon: <ProcessingSpinner />, label: 'Análise com IA', progress: '90%', bgColor: 'bg-indigo-500' };
             case 'COMPLETED':
                 return { icon: <CheckCircleIcon className="w-5 h-5 text-emerald-500" />, label: 'Concluído', progress: '100%', bgColor: 'bg-emerald-500' };
             case 'FAILED':

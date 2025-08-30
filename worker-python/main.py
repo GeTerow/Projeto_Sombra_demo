@@ -1,8 +1,7 @@
-# main.py
 import os
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request # ADICIONADO Request
-from pydantic import BaseModel, ValidationError # ADICIONADO ValidationError
+from fastapi import FastAPI, HTTPException, Request
+from pydantic import BaseModel, ValidationError
 from typing import List, Dict, Any
 import openai
 from dotenv import load_dotenv
@@ -21,7 +20,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 class ProcessTaskRequest(BaseModel):
     task_id: str
     file_path: str
-    config: Dict[str, Any] # Garante que a requisição tenha o campo config
+    config: Dict[str, Any]
 
 class GenerateSummaryRequest(BaseModel):
     name: str
@@ -32,7 +31,6 @@ class AnalyzeTaskRequest(BaseModel):
     task_id: str
     transcription: str
     config: Dict[str, Any]
-# --- API (FastAPI) ---
 app = FastAPI(title="API de Análise de Áudio", version="2.0.0")
 
 

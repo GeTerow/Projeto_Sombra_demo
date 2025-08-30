@@ -4,7 +4,6 @@ import * as sseService from '../services/sse.service';
 import * as pdfService from '../services/pdf.service';
 import fs from 'node:fs';
 
-// Controller para criar uma nova tarefa
 export const createTask = async (req: Request, res: Response) => {
   const { clientName, saleswomanId } = req.body;
 

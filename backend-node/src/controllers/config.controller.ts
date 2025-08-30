@@ -47,7 +47,6 @@ export const sendTestEmail = async (req: Request, res: Response) => {
   }
 
   try {
-    // Note: O sendTestEmail usará as configurações já salvas no banco de dados
     await emailService.sendTestEmail(testEmail);
     res.status(200).json({ message: `E-mail de teste enviado com sucesso para ${testEmail}.` });
   } catch (error: any) {
