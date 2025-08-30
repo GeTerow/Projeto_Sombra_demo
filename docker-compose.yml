@@ -1,0 +1,87 @@
+services:
+  frontend:
+    build:
+      context: ./frontend-react
+      dockerfile: Dockerfile
+    container_name: sombra-frontend
+    ports:
+      - "5173:5173"
+    networks:
+      - sombra-net
+
+  backend:
+    build:
+      context: ./backend-node
+      dockerfile: Dockerfile
+    container_name: sombra-backend
+    ports:
+      - "3001:3001"
+      - "5555:5555"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      PYTHON_WORKER_URL: "http://worker:8000"
+      PORT: 3001
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY} 
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_NAME: ${ADMIN_NAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    volumes:
+      - ./backend-node/uploads:/app/uploads
+    depends_on:
+      - db
+      - redis
+    networks:
+      - sombra-net
+
+  worker:
+    build:
+      context: ./worker-python
+      dockerfile: Dockerfile
+    container_name: sombra-worker
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_URL: "redis://redis:6379/0"
+      NODE_BACKEND_URL: "http://backend:3001"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY} 
+    volumes:
+      - ./backend-node/uploads:/app/uploads
+    depends_on:
+      - redis
+    networks:
+      - sombra-net
+
+  db:
+    image: postgres:15-alpine
+    container_name: sombra-db
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sombra-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: sombra-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - sombra-net
+
+volumes:
+  postgres_data:
+
+networks:
+  sombra-net:
+    driver: bridge

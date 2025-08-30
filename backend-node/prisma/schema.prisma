@@ -1,0 +1,73 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+enum TaskStatus {
+  PENDING
+  TRANSCRIBING
+  ALIGNING
+  DIARIZING
+  TRANSCRIBED
+  ANALYZING
+  COMPLETED
+  FAILED
+}
+
+model Saleswoman {
+  id                      String     @id @default(uuid())
+  name                    String     @unique
+  email                   String?
+  tasks                   Task[]
+  summaryPdfPath          String?
+  summaryLastGeneratedAt  DateTime?
+  summaryGenerationsToday Int        @default(0)
+  summaryLastGenerationDate DateTime?
+  
+  @@map("saleswomen")
+}
+
+model Task {
+  id            String     @id @default(uuid())
+  clientName    String
+  status        TaskStatus @default(PENDING)
+  audioFilePath String
+  transcription String?    @db.Text
+  analysis      Json?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  saleswomanId  String
+  saleswoman    Saleswoman @relation(fields: [saleswomanId], references: [id], onDelete: Cascade)
+  includedInSummary Boolean @default(false)
+  
+  @@map("tasks")
+}
+
+model Configuration {
+  key   String @id
+  value String @db.Text
+
+  @@map("configurations")
+}

@@ -1,0 +1,7 @@
+# Pacotes gerais do PyPI
+celery
+fastapi
+redis==4.6.0
+python-dotenv
+requests
+uvicorn
