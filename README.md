@@ -21,12 +21,15 @@ O sistema é containerizado e orquestrado com o Docker Compose, sendo composto p
 - **`db`**: Um banco de dados PostgreSQL para persistência dos dados.
 - **`redis`**: Um servidor Redis que atua como message broker para o Celery.
 
-> **⚠️ Aviso: Versão de Demonstração para Portfólio**
-> Este repositório é uma versão pública de demonstração do Projeto Sombra, preparada para exibição. A versão completa será mantida privada por questões comerciais.
-> - **Worker de IA Desativado:** O serviço `worker-python`, responsável pelo processamento de áudio com WhisperX e análise com OpenAI, foi desativado. Sua lógica foi substituída por simulações.
-> - **Backend com Dados Mockados:** A camada de serviço do `backend-node` foi modificada para servir dados de exemplo (mock) em vez de interagir com o banco de dados para a maioria das leituras.
-> - **Funcionalidades de Escrita Bloqueadas:** Endpoints de `POST`, `PUT` e `DELETE` foram desativados para impedir a criação ou modificação de dados.
-> Parte do código de original foi mantido em blocos de comentários nos arquivos de serviço (`/backend-node/src/services/`) para que a arquitetura e a lógica de negócio possam ser analisadas.
+
+## ⚠️ Aviso: Versão de Demonstração para Portfólio
+
+Este repositório é uma versão pública de demonstração do Projeto Sombra, preparada para exibição. A versão completa será mantida privada por questões comerciais.
+- **Worker de IA Desativado:** O serviço `worker-python`, responsável pelo processamento de áudio com WhisperX e análise com OpenAI, foi desativado. Sua lógica foi substituída por simulações.
+- **Backend com Dados Mockados:** A camada de serviço do `backend-node` foi modificada para servir dados de exemplo (mock) em vez de interagir com o banco de dados para a maioria das leituras.
+- **Funcionalidades de Escrita Bloqueadas:** Endpoints de `POST`, `PUT` e `DELETE` foram desativados para impedir a criação ou modificação de dados.
+Parte do código de original foi mantido em blocos de comentários nos arquivos de serviço (`/backend-node/src/services/`) para que a arquitetura e a lógica de negócio possam ser analisadas.
+
 
 ## Pré-requisitos
 
