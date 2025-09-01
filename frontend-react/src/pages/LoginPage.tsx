@@ -14,6 +14,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     isLoading,
     handleSubmit,
   } = useLogin({ onLoginSuccess });
+  const [rememberMe, setRememberMe] = React.useState(false);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4 dark:from-slate-900 dark:to-slate-950">
@@ -59,6 +60,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+          </div>
+
+          {/* Checkbox Lembrar de mim */}
+          <div className="flex items-center mb-2">
+            <input
+              id="remember-me"
+              name="remember-me"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600"
+            />
+            <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-700 dark:text-slate-300">
+              Lembrar de mim
+            </label>
           </div>
 
           {error && (
