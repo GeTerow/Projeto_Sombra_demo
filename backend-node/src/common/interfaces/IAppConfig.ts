@@ -1,4 +1,3 @@
-// Tipos para as configurações
 export interface IAppConfig {
   OPENAI_API_KEY: string;
   HF_TOKEN: string;

@@ -21,7 +21,6 @@ export const createTask = async (clientName: string, saleswomanId: string, fileP
   try {
     const allConfigs = await getAllConfigs();
     
-    // Filtra as configurações para enviar apenas o necessário para o worker
     const workerConfig = {
       OPENAI_API_KEY: allConfigs.OPENAI_API_KEY,
       HF_TOKEN: allConfigs.HF_TOKEN,
@@ -109,16 +108,9 @@ export const deleteFailedTasks = async (): Promise<number> => {
   });
 
   console.log(`[TaskService] Deleted ${count} failed tasks from the database.`);
-
-  // O frontend irá recarregar os dados, mas podemos notificar outros clientes.
-  // Como a função `sendSseEvent` espera um objeto Task, vamos enviar um evento genérico.
-  // Isso requer uma alteração no frontend para lidar com este tipo de evento.
-  // Por simplicidade, vamos pular o evento SSE por agora, já que o cliente que iniciou a ação irá recarregar.
-
   return count;
 };
 
-// Busca os detalhes de uma tarefa
 export const getTaskById = async (taskId: string): Promise<(Task & { saleswoman: Saleswoman | null }) | null> => {
   return prisma.task.findUnique({
     where: { id: taskId },
@@ -215,7 +207,6 @@ export const requestAnalysis = async (taskId: string): Promise<Task> => {
     throw err;
   }
 
-  // Atualiza o status para ANALYZING e notifica o frontend via SSE
   const updatedTask = await prisma.task.update({
     where: { id: taskId },
     data: { status: 'ANALYZING' },

@@ -162,7 +162,6 @@ const DetailedAnalysisContent: React.FC<{ analysis: Analysis; onCopy: (text: str
 };
 
 
-// Componente Principal da Página 
 
 export const AnalysisDetailPage: React.FC<AnalysisDetailPageProps> = ({ callId, onBack }) => {
     const { states, actions } = useAnalysisDetail(callId);

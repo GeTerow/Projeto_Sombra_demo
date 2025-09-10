@@ -62,7 +62,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             />
           </div>
 
-          {/* Checkbox Lembrar de mim */}
           <div className="flex items-center mb-2">
             <input
               id="remember-me"

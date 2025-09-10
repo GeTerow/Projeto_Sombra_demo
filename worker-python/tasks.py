@@ -281,7 +281,7 @@ def process_audio_task(task_id: str, audio_path: str, config: Dict[str, Any]):
 @celery_app.task(name="analyze_task")
 def analyze_task(task_id: str, transcription: str, config: Dict[str, Any]):
     """
-    NOVA TAREFA: Recebe uma transcrição e realiza apenas a análise com IA.
+    Recebe uma transcrição e realiza apenas a análise com IA.
     """
     logger.info(f"[Worker Celery] Iniciando ANÁLISE DE IA | task_id={task_id}")
     webhook_url = f"{NODE_BACKEND_URL}/api/v1/tasks/{task_id}/complete"

@@ -25,7 +25,6 @@ export const SettingsPage: React.FC = () => {
             <h1 className="text-3xl font-bold text-slate-800 dark:text-white mb-6">Configurações do Sistema</h1>
 
             <form onSubmit={handleSaveSubmit} className="space-y-10">
-                {/* --- Chaves de API --- */}
                 <div className="bg-white/60 dark:bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50">
                     <h2 className="text-xl font-bold flex items-center gap-3">
                         <KeyIcon className="w-6 h-6 text-amber-500" /> Chaves de API
@@ -49,7 +48,6 @@ export const SettingsPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* --- Servidor de E-mail (SMTP) --- */}
                 <div className="bg-white/60 dark:bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50">
                     <h2 className="text-xl font-bold flex items-center gap-3">
                         <EnvelopeIcon className="w-6 h-6 text-rose-500" /> Servidor de E-mail (SMTP)
@@ -77,7 +75,6 @@ export const SettingsPage: React.FC = () => {
                             <input type="email" id="SMTP_FROM" name="SMTP_FROM" value={config.SMTP_FROM || ''} onChange={handleChange} placeholder="noreply@example.com" className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700/80 border border-slate-300 dark:border-slate-600 rounded-md" />
                         </div>
                     </div>
-                    {/* --- Seção de Teste --- */}
                     <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-600">
                         <label htmlFor="test-email" className="block text-sm font-medium mb-1">Verificar configuração</label>
                         <div className="flex items-stretch gap-2">
@@ -106,7 +103,6 @@ export const SettingsPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* --- Agendamento de E-mails --- */}
                 <div className="bg-white/60 dark:bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50">
                     <h2 className="text-xl font-bold flex items-center gap-3">
                         <ClockIcon className="w-6 h-6 text-teal-500" /> Agendamento de Resumos
@@ -197,7 +193,6 @@ export const SettingsPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* --- Modelos e Processamento --- */}
                 <div className="bg-white/60 dark:bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50">
                     <h2 className="text-xl font-bold flex items-center gap-3">
                         <CogIcon className="w-6 h-6 text-sky-500" /> Modelos e Processamento

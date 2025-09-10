@@ -40,7 +40,7 @@ const parseVTT = (vtt: string): TranscriptionCue[] => {
           text,
           timestamp: formatTimestamp(startTime),
         });
-        i++; // Pula a linha de texto que já processamos
+        i++; // Pula a linha de texto
       }
     }
   }
@@ -48,7 +48,6 @@ const parseVTT = (vtt: string): TranscriptionCue[] => {
   return cues;
 };
 
-// Componente React para renderizar a transcrição formatada
 export const FormattedTranscription: React.FC<FormattedTranscriptionProps> = ({ vttContent }) => {
   if (!vttContent) {
     return <p className="text-slate-500 dark:text-slate-400">Transcrição não disponível.</p>;
@@ -65,7 +64,6 @@ export const FormattedTranscription: React.FC<FormattedTranscriptionProps> = ({ 
   ];
   let colorIndex = 0;
 
-  // Atribui uma cor diferente para cada falante
   const getSpeakerColor = (speaker: string) => {
     if (!speakerColors[speaker]) {
       speakerColors[speaker] = availableColors[colorIndex % availableColors.length];

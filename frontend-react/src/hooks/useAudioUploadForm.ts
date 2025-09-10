@@ -134,7 +134,7 @@ export const useAudioUploadForm = () => {
                     setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
                 } catch (error) {
                     console.error(`Erro ao enviar ${file.name}:`, error);
-                    setUploadProgress(prev => ({ ...prev, [file.name]: -1 })); // -1 indica erro
+                    setUploadProgress(prev => ({ ...prev, [file.name]: -1 }));
                 }
             }
 
@@ -149,7 +149,7 @@ export const useAudioUploadForm = () => {
             }
 
             if (successCount === totalFiles) {
-                // Limpar formulário apenas se todos os uploads foram bem-sucedidos
+                // Limpa formulário apenas se todos os uploads foram bem-sucedidos
                 setSelectedSaleswomanId('');
                 setClientName('');
                 setAudioFiles([]);

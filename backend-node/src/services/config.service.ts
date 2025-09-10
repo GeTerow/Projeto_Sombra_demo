@@ -35,7 +35,7 @@ function decrypt(text: string): string {
         return decrypted.toString();
     } catch (error) {
         console.error("Falha ao descriptografar:", error);
-        return ""; // Retorna vazio se a descriptografia falhar
+        return "";
     }
 }
 

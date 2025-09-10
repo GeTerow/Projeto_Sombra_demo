@@ -8,7 +8,6 @@ export const getAllUsers = async (): Promise<Omit<User, 'password'>[]> => {
       name: 'asc',
     },
   });
-  // Mapeia para remover a senha de cada usuário
   return users.map(({ password, ...userWithoutPassword }) => userWithoutPassword);
 };
 
@@ -32,7 +31,6 @@ export const createUser = async (
     },
   });
 
-  // Remove a senha do objeto retornado por segurança
   const { password, ...userWithoutPassword } = newUser;
   return userWithoutPassword;
 };

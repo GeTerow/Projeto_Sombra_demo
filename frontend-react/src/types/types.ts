@@ -1,28 +1,24 @@
 export type TaskStatus = 'PENDING' | 'TRANSCRIBING' | 'ALIGNING' | 'DIARIZING' | 'TRANSCRIBED' | 'ANALYZING' | 'COMPLETED' | 'FAILED';
 export type StageKey = 'opening' | 'discovery' | 'qualification' | 'closing';
 
-// Sub-tipo para cada estágio da performance
 export interface StageAnalysis {
   score: number;
   feedback: string;
   improvementSuggestion: string;
 }
 
-// Sub-tipo para o perfil do cliente
 export interface CustomerProfile {
   name: string;
   profile: string;
   communicationStyle: string;
 }
 
-// Sub-tipo para os pontos de melhoria
 export interface ImprovementPoint {
   salespersonLine: string;
   context: string;
   suggestion: string;
 }
 
-// Interface principal e completa da Análise da IA
 export interface Analysis {
   summary: string;
   customerProfile: CustomerProfile;

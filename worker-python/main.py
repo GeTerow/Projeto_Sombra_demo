@@ -55,7 +55,7 @@ def health_redis_check():
 
 # --- Endpoints Principais ---
 @app.post("/process-task", status_code=202)
-async def process_task_endpoint(raw_request: Request): # ASSINATURA ALTERADA
+async def process_task_endpoint(raw_request: Request):
     """
     Recebe a tarefa, incluindo sua configuração, e a envia para a fila do Celery.
     """
@@ -105,7 +105,6 @@ def generate_summary(request: GenerateSummaryRequest):
     
     print(f"-> Gerando resumo para {request.name} com base em {len(request.transcriptions)} transcricoes.")
     
-    # ... (lógica do prompt)
     previous_transcriptions_text = "\n\n---\n[FIM DA TRANSCRICAO]\n---\n\n".join(
         [f"Transcricao {i+1}:\n{transcription}" for i, transcription in enumerate(request.transcriptions)]
     )

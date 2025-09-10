@@ -2,13 +2,12 @@ import PDFDocument from 'pdfkit';
 import { Task, Saleswoman } from '@prisma/client';
 import { ITaskAnalysis } from '../common/interfaces/ITaskAnalysis';
 
-// Tema de cores para o PDF.
 const THEME = {
   primary: '#0b63d6',
   muted: '#6b7280',
   bgCard: '#f3f4f6',
   heading: '#111827'
-};
+};  
 
 // Função de formatação do PDF
 const renderTextWithBold = (doc: PDFKit.PDFDocument, text: string) => {
@@ -35,7 +34,6 @@ const renderTextWithBold = (doc: PDFKit.PDFDocument, text: string) => {
 };
 
 // Gera o PDF de análise de uma conversa
-
 export const generateTaskAnalysisPdf = (task: Task & { saleswoman: Saleswoman | null }): Promise<Buffer> => {
   return new Promise((resolve) => {
     const doc = new PDFDocument({

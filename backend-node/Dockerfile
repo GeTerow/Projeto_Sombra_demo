@@ -14,8 +14,6 @@ COPY . .
 RUN npx prisma generate
 RUN npm run build
 
-# (Opcional) Adicione esta linha para depurar e ver o que está na pasta dist
-# RUN ls -la dist
 
 # Estágio 3: Produção - Imagem final
 FROM node:20-slim

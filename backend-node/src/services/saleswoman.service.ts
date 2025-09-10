@@ -105,7 +105,6 @@ export const generateOnDemandSummary = async (id: string, force: boolean = false
 
   const newPdfPath = await generateNewSummaryWithTasks(saleswoman, tasksToInclude);
 
-  // Atualiza as estatísticas de geração
   return prisma.saleswoman.update({
     where: { id },
     data: {

@@ -1,16 +1,14 @@
-# celery_app.py
 import os
 import torch
 from celery import Celery
 
-# Use REDIS_URL do .env se disponível
 REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6380/0')
 
 celery_app = Celery(
     'audio_worker',
     broker=REDIS_URL,
     backend=REDIS_URL,
-    include=['tasks'],  # garante que tasks.py será registrado
+    include=['tasks'],
 )
 
 # Config robusta + serialização
@@ -29,5 +27,5 @@ celery_app.conf.update(
     task_reject_on_worker_lost=True,
 
     # Opcional: reciclar worker para evitar fragmentação (especialmente em CUDA)
-    worker_max_tasks_per_child=int(os.getenv('CELERY_MAX_TASKS_PER_CHILD', '10')),
+    worker_max_tasks_per_child=int(os.getenv('CELERY_MAX_TASKS_PER_CHILD', '20')),
 )

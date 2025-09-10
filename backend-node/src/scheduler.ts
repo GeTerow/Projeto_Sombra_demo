@@ -52,7 +52,7 @@ export const startOrRestartScheduler = async () => {
   }
 
   const config = await getAllConfigs();
-  const schedulePattern = config.EMAIL_SCHEDULE || '0 8 * * *'; // Padrão: 8h da manhã, todo dia
+  const schedulePattern = config.EMAIL_SCHEDULE || '0 8 * * *'; // 8h da manhã, todo dia
 
   if (cron.validate(schedulePattern)) {
     scheduledTask = cron.schedule(schedulePattern, processSummariesByVolume, { timezone: "America/Sao_Paulo" });

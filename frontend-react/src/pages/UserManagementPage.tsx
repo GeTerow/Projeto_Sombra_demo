@@ -27,7 +27,7 @@ export const UserManagementPage: React.FC = () => {
     }, []);
 
     const handleUserAdded = () => {
-        fetchUsers(); // Re-fetch to get the full updated list
+        fetchUsers();
     };
 
     return (

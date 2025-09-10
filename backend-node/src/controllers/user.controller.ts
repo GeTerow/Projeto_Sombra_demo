@@ -24,7 +24,7 @@ export const createNewUser = async (req: Request, res: Response) => {
       name,
       email,
       password,
-      role, // Se o 'role' não for passado, o default 'USER' do schema.prisma será usado
+      role,
     });
     res.status(201).json(newUser);
   } catch (error: any) {

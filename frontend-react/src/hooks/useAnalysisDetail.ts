@@ -3,7 +3,7 @@ import api from '@/services/api';
 import type { Task, Analysis } from '@/types/types';
 import { API_URL } from '@/config';
 
-// Helper para garantir que a análise tem o formato novo e completo
+// Helper para garantir que a análise tem o formato novo e completo (não é mais usado, mas mantido para compatibilidade)
 const isNewAnalysis = (a: any): a is Analysis => {
   return (
     a && typeof a === 'object' &&

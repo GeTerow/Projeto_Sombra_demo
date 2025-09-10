@@ -19,7 +19,6 @@ export const AddSaleswomanModal: React.FC<AddSaleswomanModalProps> = ({ onClose,
         setIsLoading(true);
         setError('');
         try {
-            // Envia 'name' e 'email' para a API
             const response = await api.post<Saleswoman>('/saleswomen', { name, email });
             onSaleswomanAdded(response.data); 
             onClose(); 
@@ -41,7 +40,6 @@ export const AddSaleswomanModal: React.FC<AddSaleswomanModalProps> = ({ onClose,
             >
                 <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-white">Adicionar Nova Vendedora</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Campo Nome */}
                     <div>
                         <label htmlFor="saleswoman-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                             Nome da Vendedora
@@ -57,7 +55,6 @@ export const AddSaleswomanModal: React.FC<AddSaleswomanModalProps> = ({ onClose,
                             autoFocus
                         />
                     </div>
-                    {/* Novo Campo E-mail */}
                     <div>
                         <label htmlFor="saleswoman-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                             E-mail (opcional)

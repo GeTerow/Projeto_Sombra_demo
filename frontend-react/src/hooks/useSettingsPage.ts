@@ -10,12 +10,10 @@ export const useSettingsPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-    // Estado para o teste de e-mail
     const [testEmail, setTestEmail] = useState('');
     const [isTestingEmail, setIsTestingEmail] = useState(false);
     const [testEmailMessage, setTestEmailMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    // Estado da UI de Agendamento
     const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('weekdays');
     const [time, setTime] = useState<string>('08:00');
     const [weeklyDays, setWeeklyDays] = useState<number[]>([1, 2, 3, 4, 5]);
